@@ -51,6 +51,7 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
   List<RssEntity> rssMenuItems;
   RssEntity selectedRss;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  var _tapDownPosition;
 
   @override
   Widget build(BuildContext context) {
@@ -99,18 +100,23 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
             ),
             accountEmail: Text("leetao94@gmail.com",
                 style: TextStyle(color: Colors.white))),
-        Padding(padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
-        child:        Align(
-          alignment: Alignment.centerLeft,
-          child: Text("Catalogs",textAlign: TextAlign.center,style: TextStyle(color:Colors.grey),),
-        ),),   
+        Padding(
+          padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "Catalogs",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        ),
         _buildDrawerMenu(context),
       ]))),
       body: new Container(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _buildRssMenu(context)],
+          children: <Widget>[_buildRssMenu(context)],
         ),
       ),
     );
@@ -244,7 +250,40 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
           itemCount: drawerMeunItems.length,
           itemBuilder: (BuildContext context, int index) {
             CatalogEntity catalog = drawerMeunItems[index];
-            return _buildDrawerMenuItem(catalog);
+            return GestureDetector(
+                onTapDown: (details) {
+                  _tapDownPosition = details.globalPosition;
+                },
+                onLongPress: () {
+                  final RenderBox overlay =
+                      Overlay.of(context).context.findRenderObject();
+                  var _position = RelativeRect.fromRect(
+                      _tapDownPosition &
+                          const Size(40, 40), // smaller rect, the touch area
+                      Offset.zero &
+                          overlay.size // Bigger rect, the entire screen
+                      );
+                  showMenu(
+                    position: _position,
+                    items: <PopupMenuEntry>[
+                      PopupMenuItem(
+                        value: catalog,
+                        child: FlatButton.icon(
+                            icon: Icon(Icons.delete),
+                            label: Text("Delete"),
+                            onPressed: () {
+                              print('delete $catalog');
+                            }),
+                      ),
+                      PopupMenuItem(
+                          value: catalog,
+                          child: FlatButton.icon(
+                              icon: Icon(Icons.edit), label:Text("Edit"),onPressed: () {}))
+                    ],
+                    context: context,
+                  ).then((value) => null);
+                },
+                child: _buildDrawerMenuItem(catalog));
           },
         ));
       },
@@ -254,10 +293,10 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
 
   Widget _buildDrawerMenuItem(CatalogEntity catalogEntity) {
     return ListTile(
-        onLongPress: (){
-            print('onlongpress...');
-            _showDrawerMenuItemPopup(catalogEntity);
-        },
+        // onLongPress: () {
+        //   print('onlongpress...');
+        //   _showDrawerMenuItemPopup(catalogEntity);
+        // },
         leading: Icon(Icons.loyalty),
         title: Text(catalogEntity.catalog),
         trailing: Chip(label: Text("0")));
@@ -370,9 +409,12 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
   }
 
   Widget _showDrawerMenuItemPopup(CatalogEntity catalogEntity) {
-    return PopupMenuButton(itemBuilder: (context) => [
-      PopupMenuItem(child: Row(children: [Icon(Icons.delete),Text("Delete")])),
-      PopupMenuItem(child: Row(children: [Icon(Icons.edit),Text("Edit")])),
-    ]);
+    return PopupMenuButton(
+        itemBuilder: (context) => [
+              PopupMenuItem(
+                  child: Row(children: [Icon(Icons.delete), Text("Delete")])),
+              PopupMenuItem(
+                  child: Row(children: [Icon(Icons.edit), Text("Edit")])),
+            ]);
   }
 }
