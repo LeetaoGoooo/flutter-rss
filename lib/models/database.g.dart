@@ -90,6 +90,9 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `rss2catalog` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `catalogId` INTEGER, `rssId` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
 
+        await database.execute(
+            '''CREATE VIEW IF NOT EXISTS `multi_rss` AS SELECT b.catalogId AS catalogId,a.id AS rssId,a.type AS rssType,a.url AS rssUrl, a.title AS rssTitle FROM rss2catalog b INNER JOIN rss a ON a.id == b.rssId''');
+
         await callback?.onCreate?.call(database, version);
       },
     );
@@ -206,6 +209,13 @@ class _$RssDao extends RssDao {
       row['url'] as String,
       row['type'] as String);
 
+  static final _multi_rssMapper = (Map<String, dynamic> row) => MultiRssEntity(
+      row['catalogId'] as int,
+      row['rssId'] as int,
+      row['rssType'] as String,
+      row['rssUrl'] as String,
+      row['rssTitle'] as String);
+
   final InsertionAdapter<RssEntity> _rssEntityInsertionAdapter;
 
   final DeletionAdapter<RssEntity> _rssEntityDeletionAdapter;
@@ -225,6 +235,14 @@ class _$RssDao extends RssDao {
   Future<List<RssEntity>> findRssByUrl(String url) async {
     return _queryAdapter.queryList('SELECT * FROM rss WHERE url = ?',
         arguments: <dynamic>[url], mapper: _rssMapper);
+  }
+
+  @override
+  Future<List<MultiRssEntity>> findMultiRssByCatalogId(int catalogId) async {
+    return _queryAdapter.queryList(
+        'SELECT * from multi_rss WHERE catalogId = ?',
+        arguments: <dynamic>[catalogId],
+        mapper: _multi_rssMapper);
   }
 
   @override

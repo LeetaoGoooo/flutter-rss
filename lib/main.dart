@@ -4,7 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
+import 'package:rss/models/dao/rss2catalog_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
+import 'package:rss/models/entity/rss2catalog_entity.dart';
+import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/pages/preSub.dart';
 import 'models/dao/rss_dao.dart';
 import 'models/database.dart';
@@ -41,85 +44,127 @@ class PeachRssHomeWidget extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<PeachRssHomeWidget> {
+class _MyHomePageState extends State<PeachRssHomeWidget>
+    with SingleTickerProviderStateMixin {
   TextEditingController _textFieldController = TextEditingController();
   bool _urlValidate = true;
   String _feedUrlHintMsg = 'Url is not validate';
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
+  final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   List<CatalogEntity> drawerMeunItems;
   List<RssEntity> rssMenuItems;
+  List<CatalogEntity> _tabs = [];
   RssEntity selectedRss;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _tapDownPosition;
+  TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _getAllCatalogs().then((value) {
+      CatalogEntity catalogEntity = new CatalogEntity(-1, "All");
+      _tabs.add(catalogEntity);
+      setState(() {
+        _tabs += value;
+        print('..._tabController init...:_tabs length:${_tabs.length}');
+        _tabController = new TabController(length: _tabs.length, vsync: this);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Search',
-            onPressed: () {
-              //
-            },
+    return DefaultTabController(
+        length: _tabs.length,
+        child: Scaffold(
+          key: _scaffoldKey,
+          appBar: AppBar(
+            actions: <Widget>[
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: 'Search',
+                onPressed: () {
+                  //
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                tooltip: 'Add New Rss Source',
+                onPressed: () {
+                  _displayDialog(context);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.done),
+                tooltip: 'Make All Read',
+                onPressed: () {
+                  // openPage(context);
+                },
+              ),
+            ],
+            bottom: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabs: _tabs
+                    .map((CatalogEntity catalog) => Tab(text: catalog.catalog))
+                    .toList()),
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Add New Rss Source',
-            onPressed: () {
-              _displayDialog(context);
-            },
+          drawer: Drawer(
+              child: Container(
+                  child: Column(children: <Widget>[
+            UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                ),
+                currentAccountPicture: new CircleAvatar(
+                  radius: 50.0,
+                  backgroundColor: const Color(0xFF778899),
+                  backgroundImage: AssetImage('assets/default.png'),
+                ),
+                accountName: Text(
+                  "author:Leetao",
+                  style: TextStyle(color: Colors.white),
+                ),
+                accountEmail: Text("leetao94@gmail.com",
+                    style: TextStyle(color: Colors.white))),
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Catalogs",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ),
+            _buildDrawerMenu(context),
+          ]))),
+          body: new Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _buildRssMenu(context),
+                Expanded(
+                    child: TabBarView(
+                  controller: _tabController,
+                  children: _tabs
+                      .map((CatalogEntity catalog) =>
+                          Center(child: Text("Tab ${catalog.catalog}'s view")))
+                      .toList(),
+                ))
+              ],
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.done),
-            tooltip: 'Make All Read',
-            onPressed: () {
-              // openPage(context);
-            },
-          ),
-        ],
-      ),
-      drawer: Drawer(
-          child: Container(
-              child: Column(children: <Widget>[
-        UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
-            currentAccountPicture: new CircleAvatar(
-              radius: 50.0,
-              backgroundColor: const Color(0xFF778899),
-              backgroundImage: AssetImage('assets/default.png'),
-            ),
-            accountName: Text(
-              "author:Leetao",
-              style: TextStyle(color: Colors.white),
-            ),
-            accountEmail: Text("leetao94@gmail.com",
-                style: TextStyle(color: Colors.white))),
-        Padding(
-          padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Catalogs",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-        ),
-        _buildDrawerMenu(context),
-      ]))),
-      body: new Container(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[_buildRssMenu(context)],
-        ),
-      ),
-    );
+        ));
   }
 
   _displayDialog(BuildContext context) async {
@@ -268,6 +313,18 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
                     items: <PopupMenuEntry>[
                       PopupMenuItem(
                         value: catalog,
+                        child: Column(
+                          children: <Widget>[
+                            Text(
+                              catalog.catalog,
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            Divider()
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: catalog,
                         child: FlatButton.icon(
                             icon: Icon(Icons.delete),
                             label: Text("Delete"),
@@ -278,7 +335,9 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
                       PopupMenuItem(
                           value: catalog,
                           child: FlatButton.icon(
-                              icon: Icon(Icons.edit), label:Text("Edit"),onPressed: () {}))
+                              icon: Icon(Icons.edit),
+                              label: Text("Edit"),
+                              onPressed: () {}))
                     ],
                     context: context,
                   ).then((value) => null);
@@ -293,14 +352,31 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
 
   Widget _buildDrawerMenuItem(CatalogEntity catalogEntity) {
     return ListTile(
-        // onLongPress: () {
-        //   print('onlongpress...');
-        //   _showDrawerMenuItemPopup(catalogEntity);
-        // },
         leading: Icon(Icons.loyalty),
         title: Text(catalogEntity.catalog),
-        trailing: Chip(label: Text("0")));
+        trailing: Chip(label: Text("0")),
+        onTap: () async{
+          _tabController.animateTo(_tabs.indexOf(catalogEntity));
+          _getRssByCatalog(catalogEntity);
+          Navigator.pop(context);
+        });
   }
+
+  void _getRssByCatalog(CatalogEntity catalogEntity) async {
+    print('...loading');
+    List<RssEntity> rssList = [];
+    await rssDao.findMultiRssByCatalogId(catalogEntity.id)
+    .then((List<MultiRssEntity> multiRssList) {
+      multiRssList.forEach((MultiRssEntity multiRssEntity) { 
+        RssEntity rssItem = new RssEntity(multiRssEntity.rssId, multiRssEntity.rssTitle, multiRssEntity.rssUrl, multiRssEntity.rssType);
+        rssList.add(rssItem);
+        setState(() {
+          rssMenuItems = rssList;
+        });
+      });
+    });
+  }
+
 
   Future<List<CatalogEntity>> _getAllCatalogs() {
     return catalogDao.findAllCatalogs();
@@ -315,13 +391,7 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
             if (snap.data == null) {
               return Container();
             }
-            rssMenuItems = [];
-            RssEntity defaultEntity = new RssEntity(-1, 'All', null, null);
-            if (!rssMenuItems.contains(defaultEntity)) {
-              rssMenuItems.add(defaultEntity);
-            }
-            rssMenuItems = rssMenuItems + snap.data;
-
+            rssMenuItems = snap.data;
             return ListView.separated(
               itemCount: rssMenuItems.length,
               physics: BouncingScrollPhysics(),
@@ -406,15 +476,5 @@ class _MyHomePageState extends State<PeachRssHomeWidget> {
         );
       },
     );
-  }
-
-  Widget _showDrawerMenuItemPopup(CatalogEntity catalogEntity) {
-    return PopupMenuButton(
-        itemBuilder: (context) => [
-              PopupMenuItem(
-                  child: Row(children: [Icon(Icons.delete), Text("Delete")])),
-              PopupMenuItem(
-                  child: Row(children: [Icon(Icons.edit), Text("Edit")])),
-            ]);
   }
 }

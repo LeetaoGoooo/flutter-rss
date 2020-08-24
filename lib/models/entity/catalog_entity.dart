@@ -7,5 +7,12 @@ class CatalogEntity {
   @ColumnInfo(name:'catalog',nullable: false)
   final String catalog;
 
-  CatalogEntity(this.id, this.catalog);  
+  CatalogEntity(this.id, this.catalog);
+
+  @override
+  bool operator ==(o)  => o is CatalogEntity && o.id == id && o.catalog == catalog;
+
+  @override
+  int get hashCode => id.hashCode^catalog.hashCode;
+
 }
