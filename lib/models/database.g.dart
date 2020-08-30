@@ -383,8 +383,8 @@ class _$FeedsDao extends FeedsDao {
       row['author'] as String,
       row['published'] as DateTime,
       row['content'] as String,
-      row['catalogId'] as String,
-      row['rssId'] as String);
+      row['catalogId'] as int,
+      row['rssId'] as int);
 
   final InsertionAdapter<FeedsEntity> _feedsEntityInsertionAdapter;
 

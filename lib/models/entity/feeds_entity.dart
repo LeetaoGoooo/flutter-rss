@@ -18,8 +18,8 @@ class FeedsEntity {
   final String author;
   final DateTime published;
   final String content;
-  final String catalogId;
-  final String rssId;
+  final int catalogId;
+  final int rssId;
 
   FeedsEntity(this.id, this.title, this.url, this.author, this.published,
       this.content, this.catalogId, this.rssId);

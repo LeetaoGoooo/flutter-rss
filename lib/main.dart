@@ -76,6 +76,7 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
   List<CatalogEntity> drawerMeunItems;
   Future<List<RssEntity>> rssMenuItems;
   List<CatalogEntity> _tabs = [];
+  Map<int, dynamic> _tabsMap = {-1: []};
   RssEntity selectedRss;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _tapDownPosition;
@@ -87,11 +88,14 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
   @override
   void initState() {
     super.initState();
+    CatalogEntity catalogEntity = new CatalogEntity(-1, "All");
+    _tabs.add(catalogEntity);
     _getAllCatalogs().then((value) {
-      CatalogEntity catalogEntity = new CatalogEntity(-1, "All");
-      _tabs.add(catalogEntity);
       setState(() {
         _tabs += value;
+        _tabs.forEach((element) {
+          _tabsMap[element.id] = [];
+        });
         _tabController = new TabController(length: _tabs.length, vsync: this);
       });
     });
@@ -549,126 +553,7 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
     );
   }
 
-  Future<List> _getFeeds(CatalogEntity catalog) async {
-    List<MultiRssEntity> multiRssList =
-        await rssDao.findMultiRssByCatalogId(catalog.id);
-    List feeds = [];
-    for (MultiRssEntity multiRssEntity in multiRssList) {
-      print(
-          "catalog:${catalog.catalog} 下订阅源：${multiRssEntity.rssTitle},订阅源:${multiRssEntity.rssUrl},rssType:${multiRssEntity.rssType}");
-      FeedParser feedParser = new FeedParser(url: multiRssEntity.rssUrl);
-
-      if (multiRssEntity.rssType == 'rss') {
-        try {
-          feeds.add(await feedParser.parseRss());
-        } catch (e) {
-          print("parse exception:$e");
-        }
-      }
-      if (multiRssEntity.rssType == 'atom') {
-        try {
-          feeds.add(await feedParser.parseAtom());
-        } catch (e) {
-          print("parse exception:$e");
-        }
-      }
-    }
-    print(
-        "=========================feeds length:${feeds.length}=======================");
-    return feeds;
-  }
-
-  Future<List<Widget>> _getCardListByFeeds(CatalogEntity catalog) async {
-    List<Widget> cardList = [];
-    await _getFeeds(catalog).then((List feeds) {
-      print("feeds length:${feeds.length}");
-      feeds.forEach((element) {
-        print("current feed type:${element.runtimeType.toString()}");
-        String _author = "";
-        String _coverUrl;
-        DateTime _pubDate;
-        String _title;
-        String _subTitle;
-        String _link;
-        String _content;
-
-        if (element.runtimeType.toString() == 'AtomFeed') {
-          AtomFeed _atomFeed = element;
-          _author = _atomFeed.title;
-          _atomFeed.items.forEach((atomItem) {
-            String _content = atomItem.content;
-            var document = parse(_content);
-            _title = atomItem.title;
-            _subTitle = parse(document.body.text).documentElement.text;
-            _coverUrl = _getFirstImageUrl(_content);
-            _pubDate = atomItem.updated;
-            _link = atomItem.links[0].href;
-            _content = _content;
-
-            if (_author == null || _author.isEmpty) {
-              _author = "佚名";
-            }
-            print("title:$_title,link:$_link");
-            try {
-              RssFeedListTile card = new RssFeedListTile(
-                  coverUrl: _coverUrl,
-                  title: _title.replaceAll(" ", ""),
-                  subTitle: _subTitle
-                      .replaceAll(RegExp('[\n|\s+|\s*]'), "")
-                      .trim()
-                      .substring(0, 30),
-                  publishDate: _pubDate,
-                  author: _author,
-                  content: _content,
-                  link: _link
-                  );
-              cardList.add(card);
-            } catch (e) {
-              print("title:$_title link:$_link");
-            }
-          });
-        }
-        if (element.runtimeType.toString() == 'RssFeed') {
-          RssFeed _rssFeed = element;
-          _author = _rssFeed.title;
-          _rssFeed.items.forEach((rssItem) {
-            String content = rssItem.content != null
-                ? rssItem.content.value
-                : rssItem.description;
-            var document = parse(content);
-            _title = rssItem.title;
-            _subTitle = parse(document.body.text).documentElement.text;
-            _coverUrl = _getFirstImageUrl(content);
-            _pubDate = rssItem.pubDate;
-            _link = rssItem.link;
-            _content = content;
-
-            if (_author == null || _author.isEmpty) {
-              _author = "佚名";
-            }
-
-            RssFeedListTile card = new RssFeedListTile(
-              coverUrl: _coverUrl,
-              title: _title.replaceAll(" ", ""),
-              subTitle: _subTitle
-                  .replaceAll(RegExp('[\n|\s+|\s*]'), "")
-                  .trim()
-                  .substring(0, 30),
-              publishDate: _pubDate,
-              author: _author,
-              content: _content,
-              link: _link,
-            );
-            cardList.add(card);
-          });
-        }
-      });
-    });
-    print("_getCardListByFeeds cards length:${cardList.length}");
-    var completer = new Completer<List<Widget>>();
-    completer.complete(cardList);
-    return completer.future;
-  }
+  Future<List> _getFeeds(CatalogEntity catalog) async {}
 
   Widget _buildTabViewByCatalog(CatalogEntity catalog) {
     print('build catalog:${catalog.catalog}');
