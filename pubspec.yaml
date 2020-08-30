@@ -31,7 +31,13 @@ dependencies:
   webfeed: ^0.5.2
   http: ^0.12.2
   floor: ^0.14.0
-  
+  intl: ^0.16.1
+  html: ^0.14.0+3
+  gradient_app_bar: ^0.0.1
+  flutter_html: ^1.0.0
+  share: ^0.6.5
+  cached_network_image: ^2.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

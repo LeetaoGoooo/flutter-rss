@@ -66,10 +66,12 @@ class _$AppDatabase extends AppDatabase {
 
   Rss2CatalogDao _rss2catalogDaoInstance;
 
+  FeedsDao _feedsDaoInstance;
+
   Future<sqflite.Database> open(String path, List<Migration> migrations,
       [Callback callback]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 1,
+      version: 2,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
       },
@@ -89,6 +91,8 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `rss` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `type` TEXT)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `rss2catalog` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `catalogId` INTEGER, `rssId` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` TEXT, `rssId` TEXT, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
 
         await database.execute(
             '''CREATE VIEW IF NOT EXISTS `multi_rss` AS SELECT b.catalogId AS catalogId,a.id AS rssId,a.type AS rssType,a.url AS rssUrl, a.title AS rssTitle FROM rss2catalog b INNER JOIN rss a ON a.id == b.rssId''');
@@ -113,6 +117,11 @@ class _$AppDatabase extends AppDatabase {
   Rss2CatalogDao get rss2catalogDao {
     return _rss2catalogDaoInstance ??=
         _$Rss2CatalogDao(database, changeListener);
+  }
+
+  @override
+  FeedsDao get feedsDao {
+    return _feedsDaoInstance ??= _$FeedsDao(database, changeListener);
   }
 }
 
@@ -327,5 +336,93 @@ class _$Rss2CatalogDao extends Rss2CatalogDao {
   @override
   Future<void> deleteRss2Catalog(Rss2CatalogEntity rss2CatalogEntity) async {
     await _rss2CatalogEntityDeletionAdapter.delete(rss2CatalogEntity);
+  }
+}
+
+class _$FeedsDao extends FeedsDao {
+  _$FeedsDao(this.database, this.changeListener)
+      : _queryAdapter = QueryAdapter(database),
+        _feedsEntityInsertionAdapter = InsertionAdapter(
+            database,
+            'feeds',
+            (FeedsEntity item) => <String, dynamic>{
+                  'id': item.id,
+                  'title': item.title,
+                  'url': item.url,
+                  'author': item.author,
+                  'published': item.published,
+                  'content': item.content,
+                  'catalogId': item.catalogId,
+                  'rssId': item.rssId
+                }),
+        _feedsEntityDeletionAdapter = DeletionAdapter(
+            database,
+            'feeds',
+            ['id'],
+            (FeedsEntity item) => <String, dynamic>{
+                  'id': item.id,
+                  'title': item.title,
+                  'url': item.url,
+                  'author': item.author,
+                  'published': item.published,
+                  'content': item.content,
+                  'catalogId': item.catalogId,
+                  'rssId': item.rssId
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  static final _feedsMapper = (Map<String, dynamic> row) => FeedsEntity(
+      row['id'] as int,
+      row['title'] as String,
+      row['url'] as String,
+      row['author'] as String,
+      row['published'] as DateTime,
+      row['content'] as String,
+      row['catalogId'] as String,
+      row['rssId'] as String);
+
+  final InsertionAdapter<FeedsEntity> _feedsEntityInsertionAdapter;
+
+  final DeletionAdapter<FeedsEntity> _feedsEntityDeletionAdapter;
+
+  @override
+  Future<List<FeedsEntity>> findAllFeeds() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM feeds ORDER BY published DESC',
+        mapper: _feedsMapper);
+  }
+
+  @override
+  Future<List<FeedsEntity>> findFeedsByCatalogId(int catalogId) async {
+    return _queryAdapter.queryList('SELECT * FROM feeds WHERE catalogId = ?',
+        arguments: <dynamic>[catalogId], mapper: _feedsMapper);
+  }
+
+  @override
+  Future<List<FeedsEntity>> findFeedsByrssId(int rssId) async {
+    return _queryAdapter.queryList('SELECT * FROM feeds WHERE rssId = ?',
+        arguments: <dynamic>[rssId], mapper: _feedsMapper);
+  }
+
+  @override
+  Future<int> insertFeeds(FeedsEntity feedsEntity) {
+    return _feedsEntityInsertionAdapter.insertAndReturnId(
+        feedsEntity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<List<int>> insertFeedList(List<FeedsEntity> feedList) {
+    return _feedsEntityInsertionAdapter.insertListAndReturnIds(
+        feedList, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deleteFeeds(FeedsEntity feedsEntity) async {
+    await _feedsEntityDeletionAdapter.delete(feedsEntity);
   }
 }
