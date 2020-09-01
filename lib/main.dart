@@ -5,14 +5,16 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
-import 'package:html/parser.dart';
+import 'package:provider/provider.dart';
+import 'package:rss/compents/rssChipWidget.dart';
+import 'package:rss/compents/tabviewWidget.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
-import 'package:rss/models/dao/rss2catalog_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/pages/preSub.dart';
-import 'package:webfeed/webfeed.dart';
-import 'compents/rssFeedWidget.dart';
+import 'package:rss/shared/feedNotifier.dart';
+import 'package:rss/shared/rssNotifier.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/dao/rss_dao.dart';
 import 'models/database.dart';
 import 'models/entity/rss_entity.dart';
@@ -21,12 +23,12 @@ import 'constants/globals.dart' as g;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-//   final migration1to2 = Migration(1, 2, (database) async {
-//   await database.execute('CREATE VIEW IF NOT EXISTS `multi_rss` AS SELECT b.catalogId AS catalogId,a.id AS rssId,a.type AS rssType,a.url AS rssUrl, a.title AS rssTitle FROM rss2catalog b INNER JOIN rss a ON a.id == b.rssId');
+//   final migration2to3 = Migration(2, 3, (database) async {
+//   await database.execute('CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` INTEGER, `rssId` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
 // });
   await $FloorAppDatabase
       .databaseBuilder('rss.db')
-      // .addMigrations([migration1to2])
+      // .addMigrations([migration2to3])
       .build()
       .then((database) {
     g.catalogDao = database.catalogDao;
@@ -35,7 +37,15 @@ Future<void> main() async {
     g.feedsDao = database.feedsDao;
   });
 
-  runApp(PeachRssApp());
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  prefs.clear();
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => FeedNotifier()),
+      ChangeNotifierProvider(create: (context) => RssNotifer())
+    ],
+    child: PeachRssApp(),
+  ));
 }
 
 class PeachRssApp extends StatelessWidget {
@@ -64,26 +74,19 @@ class PeachRssHomeWidget extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<PeachRssHomeWidget>
-    with
-        SingleTickerProviderStateMixin,
-        AutomaticKeepAliveClientMixin<PeachRssHomeWidget> {
+    with SingleTickerProviderStateMixin {
   TextEditingController _textFieldController = TextEditingController();
   bool _urlValidate = true;
   String _feedUrlHintMsg = 'Url is not validate';
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
-  final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   List<CatalogEntity> drawerMeunItems;
   Future<List<RssEntity>> rssMenuItems;
   List<CatalogEntity> _tabs = [];
-  Map<int, dynamic> _tabsMap = {-1: []};
   RssEntity selectedRss;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   var _tapDownPosition;
   TabController _tabController;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -93,9 +96,6 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
     _getAllCatalogs().then((value) {
       setState(() {
         _tabs += value;
-        _tabs.forEach((element) {
-          _tabsMap[element.id] = [];
-        });
         _tabController = new TabController(length: _tabs.length, vsync: this);
       });
     });
@@ -111,7 +111,6 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
   }
 
   @override
-  // ignore: must_call_super
   Widget build(BuildContext context) {
     return DefaultTabController(
         length: _tabs.length,
@@ -149,15 +148,8 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
                 isScrollable: true,
                 indicatorColor: Colors.pinkAccent,
                 onTap: (int index) {
-                  print("tabbar index:$index");
-                  if (index == 0) {
-                    setState(() {
-                      rssMenuItems = _getAllRssEntites();
-                    });
-                  } else {
-                    CatalogEntity catalog = _tabs[index];
-                    _getRssByCatalog(catalog);
-                  }
+                  print("tabbar index:$index,catalog:${_tabs[index].catalog}");
+                  Provider.of<RssNotifer>(context).getRssEntityByCatalog(_tabs[index]);
                 },
                 tabs: _tabs
                     .map((CatalogEntity catalog) => Tab(text: catalog.catalog))
@@ -204,15 +196,17 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _buildRssMenu(context),
+                RssChipWidget(),
                 Expanded(
                     child: TabBarView(
                         controller: _tabController,
                         children: _tabs.isEmpty
                             ? <Widget>[]
                             : _tabs.map((e) {
+                                // 
+                                Provider.of<FeedNotifier>(context,listen: false).getFeeds(e);
                                 print("catalog ${e.catalog}, id :${e.id}");
-                                return _buildTabViewByCatalog(e);
+                                return TabViewWidget();
                                 // return Text(e.catalog);
                               }).toList()))
               ],
@@ -413,185 +407,15 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
           print("_buildDrawerMenuItem catalog: ${catalogEntity.catalog}");
           _tabController.animateTo(_tabs.indexOf(catalogEntity));
           Navigator.pop(context);
-          _getRssByCatalog(catalogEntity);
+          // _getRssByCatalog(catalogEntity);
         });
-  }
-
-  void _getRssByCatalog(CatalogEntity catalogEntity) async {
-    List<RssEntity> rssList = [];
-    await rssDao
-        .findMultiRssByCatalogId(catalogEntity.id)
-        .then((List<MultiRssEntity> multiRssList) {
-      if (multiRssList.length == 0) {
-        var completer = new Completer<List<RssEntity>>();
-        completer.complete(new List<RssEntity>());
-        setState(() {
-          rssMenuItems = completer.future;
-        });
-      }
-      multiRssList.forEach((MultiRssEntity multiRssEntity) {
-        print("multiRssList rssTitle:${multiRssEntity.rssTitle}");
-        RssEntity rssItem = new RssEntity(
-            multiRssEntity.rssId,
-            multiRssEntity.rssTitle,
-            multiRssEntity.rssUrl,
-            multiRssEntity.rssType);
-        rssList.add(rssItem);
-        var completer = new Completer<List<RssEntity>>();
-        completer.complete(rssList);
-        setState(() {
-          rssMenuItems = completer.future;
-        });
-      });
-    });
   }
 
   Future<List<CatalogEntity>> _getAllCatalogs() {
     return catalogDao.findAllCatalogs();
   }
 
-  Widget _buildRssMenu(BuildContext context) {
-    return Container(
-        height: 60,
-        padding: EdgeInsets.fromLTRB(16, 0, 0, 0),
-        child: FutureBuilder<List<RssEntity>>(
-            builder: (context, AsyncSnapshot<List<RssEntity>> snap) {
-              if (!snap.hasData) return LinearProgressIndicator();
-              if (snap.data == null) {
-                return Container();
-              }
-              var _rssMenuItems = snap.data;
-              return ListView.separated(
-                itemCount: _rssMenuItems.length,
-                physics: BouncingScrollPhysics(),
-                // padding: EdgeInsets.all(12.0),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (BuildContext context, int index) {
-                  return _buildRssMenuItem(_rssMenuItems[index]);
-                },
-                separatorBuilder: (BuildContext context, int index) {
-                  return SizedBox(height: 10);
-                },
-              );
-            },
-            future: rssMenuItems //_getAllRssEntites(),
-            ));
-  }
-
-  Widget _buildRssMenuItem(RssEntity rssEntity) {
-    return RawChip(
-      avatar: (selectedRss == null || selectedRss.id != rssEntity.id)
-          ? null
-          : CircleAvatar(),
-      selected: (selectedRss == null || selectedRss.id != rssEntity.id)
-          ? false
-          : true,
-      label: Text(rssEntity.title),
-      selectedColor: Theme.of(context).chipTheme.selectedColor,
-      selectedShadowColor: Theme.of(context).chipTheme.selectedShadowColor,
-      deleteIcon: Icon(Icons.highlight_off,
-          color: Theme.of(context).chipTheme.deleteIconColor, size: 18),
-      onDeleted: () async {
-        await _unsubcribeDialog(rssEntity);
-      },
-      onSelected: (value) {
-        if (selectedRss == rssEntity) {
-          setState(() {
-            selectedRss = null;
-          });
-        } else {
-          setState(() {
-            selectedRss = rssEntity;
-          });
-        }
-      },
-    );
-  }
-
   Future<List<RssEntity>> _getAllRssEntites() {
     return rssDao.findAllRss();
-  }
-
-  Future<void> _unsubcribeDialog(RssEntity rssEntity) async {
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Unsubscrie"),
-          content: Text("will you unsubscrie this rss?"),
-          actions: [
-            FlatButton(
-              child: Text("Yes"),
-              onPressed: () async {
-                await rssDao.deleteRss(rssEntity).then((value) {
-                  if (selectedRss != null && rssEntity.id == selectedRss.id) {
-                    setState(() {
-                      selectedRss = null;
-                    });
-                  }
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text(
-                      "dismiss ${rssEntity.title} success!",
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                  ));
-                  Navigator.of(context).pop();
-                }).catchError((error) {
-                  _scaffoldKey.currentState.showSnackBar(SnackBar(
-                    content: Text("dimiss this rss failed!"),
-                    behavior: SnackBarBehavior.floating,
-                  ));
-                });
-              },
-            ),
-            FlatButton(
-                onPressed: () => {Navigator.of(context).pop()},
-                child: Text("No"))
-          ],
-        );
-      },
-    );
-  }
-
-  Future<List> _getFeeds(CatalogEntity catalog) async {}
-
-  Widget _buildTabViewByCatalog(CatalogEntity catalog) {
-    print('build catalog:${catalog.catalog}');
-    return SizedBox.expand(
-        child: FutureBuilder(
-            future: _getCardListByFeeds(catalog),
-            builder: (context, snap) {
-              if (!snap.hasData)
-                return Align(
-                  child: LinearProgressIndicator(
-                    backgroundColor: Colors.white,
-                  ),
-                  alignment: Alignment.topCenter,
-                );
-              if (snap.data == null) {
-                return Container();
-              }
-              var cardList = snap.data;
-              return Container(
-                  child: ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      itemCount: cardList.length,
-                      itemBuilder: (context, index) {
-                        return cardList[index];
-                      }));
-            }));
-  }
-
-  String _getFirstImageUrl(String description) {
-    RegExp regExp = new RegExp(r'<img\s+src="(.+?)"');
-    Iterable<Match> matches = regExp.allMatches(description);
-    if (matches == null) {
-      return null;
-    }
-    if (matches.toSet().length > 0) {
-      return matches.first.group(1);
-    }
-    return null;
   }
 }

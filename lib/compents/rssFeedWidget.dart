@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'articleHeroWidget.dart';
 
@@ -10,10 +9,11 @@ class RssFeedListTile extends StatefulWidget {
   final String coverUrl;
   final String title;
   final String subTitle;
-  final DateTime publishDate;
+  final String publishDate;
   final String author;
   final String content;
   final String link;
+  final int catalogId;
 
   const RssFeedListTile(
       {Key key,
@@ -23,7 +23,7 @@ class RssFeedListTile extends StatefulWidget {
       this.publishDate,
       this.author,
       this.content,
-      this.link})
+      this.link, this.catalogId})
       : assert(title != null),
         assert(subTitle != null),
         assert(publishDate != null),
@@ -35,7 +35,7 @@ class RssFeedListTile extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
     return RssFeedLisTileState(
-        coverUrl, title, subTitle, publishDate, author, content, link);
+        coverUrl, title, subTitle, publishDate, author, content, link, catalogId);
   }
 }
 
@@ -43,17 +43,18 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
   final String coverUrl;
   final String title;
   final String subTitle;
-  final DateTime publishDate;
+  final String publishDate;
   final String author;
   final String content;
   final String link;
+  final int catalogId;
+
 
   RssFeedLisTileState(this.coverUrl, this.title, this.subTitle,
-      this.publishDate, this.author, this.content, this.link);
+      this.publishDate, this.author, this.content, this.link, this.catalogId);
 
   @override
   Widget build(BuildContext context) {
-    print("title:$title......link:$link");
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (_) {
@@ -66,7 +67,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
         }));
       },
       child: Hero(
-        tag: link,
+        tag: "$catalogId-$link",
         child: Card(
           elevation: 18.0,
           clipBehavior: Clip.antiAlias,
@@ -89,7 +90,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                   Padding(
                     padding: EdgeInsets.fromLTRB(8, 8, 16, 8),
                     child: Text(
-                      new DateFormat("y-M-d").add_jm().format(publishDate),
+                      publishDate,
                       style: TextStyle(color: Colors.grey, fontSize: 10),
                     ),
                   )

@@ -71,7 +71,7 @@ class _$AppDatabase extends AppDatabase {
   Future<sqflite.Database> open(String path, List<Migration> migrations,
       [Callback callback]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 2,
+      version: 3,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
       },
@@ -92,7 +92,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `rss2catalog` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `catalogId` INTEGER, `rssId` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` TEXT, `rssId` TEXT, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+            'CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` INTEGER, `rssId` INTEGER, `status` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
 
         await database.execute(
             '''CREATE VIEW IF NOT EXISTS `multi_rss` AS SELECT b.catalogId AS catalogId,a.id AS rssId,a.type AS rssType,a.url AS rssUrl, a.title AS rssTitle FROM rss2catalog b INNER JOIN rss a ON a.id == b.rssId''');
@@ -255,6 +255,18 @@ class _$RssDao extends RssDao {
   }
 
   @override
+  Future<List<MultiRssEntity>> findAllMultiRss() async {
+    return _queryAdapter.queryList('SELECT * from multi_rss',
+        mapper: _multi_rssMapper);
+  }
+
+  @override
+  Future<List<MultiRssEntity>> findMultiRssByRssId(int rssId) async {
+    return _queryAdapter.queryList('SELECT * from multi_rss WHERE rssId = ?',
+        arguments: <dynamic>[rssId], mapper: _multi_rssMapper);
+  }
+
+  @override
   Future<int> insertRss(RssEntity rssEntity) {
     return _rssEntityInsertionAdapter.insertAndReturnId(
         rssEntity, OnConflictStrategy.abort);
@@ -321,6 +333,12 @@ class _$Rss2CatalogDao extends Rss2CatalogDao {
   }
 
   @override
+  Future<Rss2CatalogEntity> findCatalogByRssId(int rssId) async {
+    return _queryAdapter.query('SELECT * FROM rss2catalog WHERE rssId = ?',
+        arguments: <dynamic>[rssId], mapper: _rss2catalogMapper);
+  }
+
+  @override
   Future<List<int>> insertRss2CatalogList(
       List<Rss2CatalogEntity> rss2CatalogEntityList) {
     return _rss2CatalogEntityInsertionAdapter.insertListAndReturnIds(
@@ -353,7 +371,8 @@ class _$FeedsDao extends FeedsDao {
                   'published': item.published,
                   'content': item.content,
                   'catalogId': item.catalogId,
-                  'rssId': item.rssId
+                  'rssId': item.rssId,
+                  'status': item.status
                 }),
         _feedsEntityDeletionAdapter = DeletionAdapter(
             database,
@@ -367,7 +386,8 @@ class _$FeedsDao extends FeedsDao {
                   'published': item.published,
                   'content': item.content,
                   'catalogId': item.catalogId,
-                  'rssId': item.rssId
+                  'rssId': item.rssId,
+                  'status': item.status
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -381,10 +401,11 @@ class _$FeedsDao extends FeedsDao {
       row['title'] as String,
       row['url'] as String,
       row['author'] as String,
-      row['published'] as DateTime,
+      row['published'] as String,
       row['content'] as String,
       row['catalogId'] as int,
-      row['rssId'] as int);
+      row['rssId'] as int,
+      row['status'] as int);
 
   final InsertionAdapter<FeedsEntity> _feedsEntityInsertionAdapter;
 
@@ -404,9 +425,17 @@ class _$FeedsDao extends FeedsDao {
   }
 
   @override
-  Future<List<FeedsEntity>> findFeedsByrssId(int rssId) async {
+  Future<List<FeedsEntity>> findFeedsByRssId(int rssId) async {
     return _queryAdapter.queryList('SELECT * FROM feeds WHERE rssId = ?',
         arguments: <dynamic>[rssId], mapper: _feedsMapper);
+  }
+
+  @override
+  Future<List<FeedsEntity>> findFeedsByPart(int rssId, String url) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM feeds WHERE rssId = ? AND url = ?',
+        arguments: <dynamic>[rssId, url],
+        mapper: _feedsMapper);
   }
 
   @override

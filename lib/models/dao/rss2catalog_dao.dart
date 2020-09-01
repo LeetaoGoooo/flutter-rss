@@ -10,6 +10,10 @@ abstract class Rss2CatalogDao {
   @Query('SELECT * FROM rss2catalog WHERE catalogId = :catalogId')
   Future<List<Rss2CatalogEntity>> findRssByCatalogId(int catalogId);
 
+
+  @Query('SELECT * FROM rss2catalog WHERE rssId = :rssId')
+  Future<Rss2CatalogEntity> findCatalogByRssId(int rssId);
+
   @insert
   Future<List<int>> insertRss2CatalogList(List<Rss2CatalogEntity> rss2CatalogEntityList);
 

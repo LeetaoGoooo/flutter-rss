@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_html/style.dart';
-import 'package:intl/intl.dart';
 import 'package:share/share.dart';
 
 class ArticleHeroWidget extends StatefulWidget {
   final String link;
   final String title;
-  final DateTime pubDate;
+  final String pubDate;
   final String content;
   final String author;
   final VoidCallback onTap;
@@ -31,7 +30,7 @@ class ArticleHeroWidget extends StatefulWidget {
 class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   final String link;
   final String title;
-  final DateTime pubDate;
+  final String pubDate;
   final String content;
   final String author;
   final VoidCallback onTap;
@@ -142,7 +141,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
                         alignment: Alignment.topCenter,
                       ),
                       Text(
-                        '$author  ${new DateFormat("y-M-d").add_jm().format(pubDate)}',
+                        '$author  $pubDate',
                         style: TextStyle(color: Colors.black.withOpacity(0.6)),
                       ),
                       Padding(

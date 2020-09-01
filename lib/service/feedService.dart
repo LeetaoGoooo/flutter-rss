@@ -15,7 +15,7 @@ class FeedService {
   }
 
   Future<List<FeedsEntity>> _getFeedsByRssId(int rssId) {
-    return feedsDao.findFeedsByrssId(rssId);
+    return feedsDao.findFeedsByRssId(rssId);
   }
 
   Future<int> _insertFeeds(FeedsEntity feedsEntity) {

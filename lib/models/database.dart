@@ -18,7 +18,7 @@ import 'entity/rss_entity.dart';
 
 part 'database.g.dart'; // the generated code will be there
 
-@Database(version: 2, entities: [CatalogEntity,RssEntity,Rss2CatalogEntity,FeedsEntity],views: [MultiRssEntity])
+@Database(version: 3, entities: [CatalogEntity,RssEntity,Rss2CatalogEntity,FeedsEntity],views: [MultiRssEntity])
 abstract class AppDatabase extends FloorDatabase {
   CatalogDao get catalogDao;
   RssDao get rssDao;

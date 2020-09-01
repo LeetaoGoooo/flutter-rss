@@ -10,7 +10,10 @@ abstract class FeedsDao {
   Future<List<FeedsEntity>> findFeedsByCatalogId(int catalogId);
 
   @Query('SELECT * FROM feeds WHERE rssId = :rssId')
-  Future<List<FeedsEntity>> findFeedsByrssId(int rssId);
+  Future<List<FeedsEntity>> findFeedsByRssId(int rssId);
+
+  @Query('SELECT * FROM feeds WHERE rssId = :rssId AND url = :url')
+  Future<List<FeedsEntity>> findFeedsByPart(int rssId, String url);
 
   @delete
   Future<void> deleteFeeds(FeedsEntity feedsEntity);
