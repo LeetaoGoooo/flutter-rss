@@ -7,7 +7,6 @@ import 'package:rss/shared/feedNotifier.dart';
 import 'package:rss/shared/rssNotifier.dart';
 
 class RssChipWidget extends StatefulWidget {
-
   RssChipWidget({Key key}) : super(key: key);
 
   @override
@@ -27,50 +26,52 @@ class RssChipStateWidget extends State<RssChipWidget> {
   @override
   Widget build(BuildContext context) {
     return Consumer<RssNotifer>(builder: (context, notifier, child) {
-      print("rss length:${notifier.currentRssList.length}");
+      print("rss length:${notifier.currentRssList.length} catalog:${notifier.currentCatalog.catalog}");
       List<RssEntity> rssEntityList = notifier.currentRssList;
       return Container(
           height: 60,
           padding: EdgeInsets.fromLTRB(16, 0, 0, 0),
           child: ListView.builder(
-            itemCount: rssEntityList.length,
-            physics: BouncingScrollPhysics(),
-            scrollDirection: Axis.horizontal,
-            itemBuilder: (BuildContext context, int index) {
-              RssEntity rssEntity = rssEntityList[index];
-              return RawChip(
-                avatar: (selectedRss == null || selectedRss.id != rssEntity.id)
-                    ? null
-                    : CircleAvatar(),
-                selected:
-                    (selectedRss == null || selectedRss.id != rssEntity.id)
-                        ? false
-                        : true,
-                label: Text(rssEntity.title),
-                selectedColor: Theme.of(context).chipTheme.selectedColor,
-                selectedShadowColor:
-                    Theme.of(context).chipTheme.selectedShadowColor,
-                deleteIcon: Icon(Icons.highlight_off,
-                    color: Theme.of(context).chipTheme.deleteIconColor,
-                    size: 18),
-                onDeleted: () async {
-                  await _unsubcribeDialog(rssEntity);
-                },
-                onSelected: (value) {
-                  if (selectedRss == rssEntity) {
-                    setState(() {
-                      selectedRss = null;
-                    });
-                  } else {
-                    setState(() {
-                      selectedRss = rssEntity;
-                    });
-                    Provider.of<FeedNotifier>(context,listen: false).selectRss(rssEntity,value);
-                  }
-                },
-              );
-            }
-          ));
+              itemCount: rssEntityList.length,
+              physics: BouncingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (BuildContext context, int index) {
+                RssEntity rssEntity = rssEntityList[index];
+                return RawChip(
+                  avatar:
+                      (selectedRss == null || selectedRss.id != rssEntity.id)
+                          ? null
+                          : CircleAvatar(),
+                  selected:
+                      (selectedRss == null || selectedRss.id != rssEntity.id)
+                          ? false
+                          : true,
+                  label: Text(rssEntity.title),
+                  selectedColor: Theme.of(context).chipTheme.selectedColor,
+                  selectedShadowColor:
+                      Theme.of(context).chipTheme.selectedShadowColor,
+                  deleteIcon: Icon(Icons.highlight_off,
+                      color: Theme.of(context).chipTheme.deleteIconColor,
+                      size: 18),
+                  onDeleted: () async {
+                    await _unsubcribeDialog(rssEntity);
+                  },
+                  onSelected: (value) {
+                    if (selectedRss == rssEntity) {
+                      setState(() {
+                        selectedRss = null;
+                      });
+                    } else {
+                      setState(() {
+                        selectedRss = rssEntity;
+                      });
+                    }
+                    print("rss:${rssEntity.title} was selected,current catalog:${notifier.currentCatalog.id}");
+                    Provider.of<FeedNotifier>(context, listen: false)
+                        .selectRss(notifier.currentCatalog, rssEntity, value);
+                  },
+                );
+              }));
     });
   }
 

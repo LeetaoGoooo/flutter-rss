@@ -24,6 +24,7 @@ class FeedNotifier extends ChangeNotifier {
   final RssDao rssDao = g.rssDao;
   final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   final CatalogDao catalogDao = g.catalogDao;
+  CatalogEntity currentCatalog = new CatalogEntity(-1, "All");
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   List<FeedsEntity> currentFeedsList = [];
 
@@ -49,8 +50,7 @@ class FeedNotifier extends ChangeNotifier {
     List<MultiRssEntity> multiRssList =
         await rssDao.findMultiRssByCatalogId(catalog.id);
     for (MultiRssEntity multiRssEntity in multiRssList) {
-      if (prefs.containsKey(multiRssEntity.rssId.toString()) &&
-          prefs.getBool('${multiRssEntity.rssId.toString()}-status')) {
+      if (prefs.containsKey(multiRssEntity.rssId.toString())) {
         List<String> _rssFeedStringList =
             prefs.getStringList(multiRssEntity.rssId.toString());
         if (_rssFeedStringList != null) {
@@ -72,35 +72,36 @@ class FeedNotifier extends ChangeNotifier {
     }
   }
 
-  selectRss(RssEntity rssEntity, bool selected) async {
+  selectRss(CatalogEntity catalog, RssEntity rssEntity, bool selected) async {
+    currentCatalog = catalog;
     final SharedPreferences prefs = await _prefs;
+    currentCatalog = catalog;
     if (selected) {
-      currentFeedsList = [];
-
-      List<MultiRssEntity> multiRssList =
-          await rssDao.findMultiRssByRssId(rssEntity.id);
-      for (MultiRssEntity multiRssEntity in multiRssList) {
-        await _buildFeeds(multiRssEntity);
-      }
-
+      print("selected ${rssEntity.title}");
+      List<FeedsEntity> _tmpFeedsList = [];
       List<String> _rssFeedStringList =
           prefs.getStringList(rssEntity.id.toString());
       _rssFeedStringList.forEach((element) {
         Map _feedMap = jsonDecode(element);
         var _feed = new FeedsEntity.fromJson(_feedMap);
-        currentFeedsList.add(_feed);
+        _tmpFeedsList.add(_feed);
       });
+      currentFeedsList = _tmpFeedsList;
     } else {
-      Rss2CatalogEntity rss2catalogEntity =
-          await rss2catalogDao.findCatalogByRssId(rssEntity.id);
-      CatalogEntity catalogEntity =
-          await catalogDao.findCatalogById(rss2catalogEntity.catalogId);
-      await getFeeds(catalogEntity);
+      print("unselected current catalog:${catalog.catalog}");
+      currentFeedsList = await getFeedsByCatalog(catalog);
+      if (catalog.id == -1) {
+        currentFeedsList = await getAllFeedList();
+      }
     }
+    print(
+        "current catalog:${catalog.id} was changed,current length:${currentFeedsList.length}");
     notifyListeners();
   }
 
   getFeeds(CatalogEntity catalog) async {
+    print("current catalog:${catalog.catalog}");
+    currentCatalog = catalog;
     final SharedPreferences prefs = await _prefs;
     if (catalog.id == -1) {
       if (!prefs.containsKey("allFeeds")) {

@@ -10,7 +10,6 @@ import 'package:rss/compents/rssChipWidget.dart';
 import 'package:rss/compents/tabviewWidget.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
-import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/pages/preSub.dart';
 import 'package:rss/shared/feedNotifier.dart';
 import 'package:rss/shared/rssNotifier.dart';
@@ -81,7 +80,6 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
   List<CatalogEntity> drawerMeunItems;
-  Future<List<RssEntity>> rssMenuItems;
   List<CatalogEntity> _tabs = [];
   RssEntity selectedRss;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -92,15 +90,17 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
   void initState() {
     super.initState();
     CatalogEntity catalogEntity = new CatalogEntity(-1, "All");
+    Provider.of<RssNotifer>(context, listen: false)
+        .getRssEntityByCatalog(catalogEntity);
     _tabs.add(catalogEntity);
     _getAllCatalogs().then((value) {
       setState(() {
         _tabs += value;
         _tabController = new TabController(length: _tabs.length, vsync: this);
+        _tabController.addListener(() {
+          _handleTabBarSelection();
+        });
       });
-    });
-    setState(() {
-      rssMenuItems = _getAllRssEntites();
     });
   }
 
@@ -147,10 +147,6 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
                 controller: _tabController,
                 isScrollable: true,
                 indicatorColor: Colors.pinkAccent,
-                onTap: (int index) {
-                  print("tabbar index:$index,catalog:${_tabs[index].catalog}");
-                  Provider.of<RssNotifer>(context).getRssEntityByCatalog(_tabs[index]);
-                },
                 tabs: _tabs
                     .map((CatalogEntity catalog) => Tab(text: catalog.catalog))
                     .toList()),
@@ -203,10 +199,14 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
                         children: _tabs.isEmpty
                             ? <Widget>[]
                             : _tabs.map((e) {
-                                // 
-                                Provider.of<FeedNotifier>(context,listen: false).getFeeds(e);
+                                //
+                                if (e.id == -1) {
+                                  Provider.of<FeedNotifier>(context,
+                                          listen: false)
+                                      .getFeeds(e);
+                                }
                                 print("catalog ${e.catalog}, id :${e.id}");
-                                return TabViewWidget();
+                                return TabViewWidget(catalog: e);
                                 // return Text(e.catalog);
                               }).toList()))
               ],
@@ -415,7 +415,12 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
     return catalogDao.findAllCatalogs();
   }
 
-  Future<List<RssEntity>> _getAllRssEntites() {
-    return rssDao.findAllRss();
+  void _handleTabBarSelection() {
+    int index = _tabController.index;
+    print(
+        "tabbar changing current index:$index,catalog:${_tabs[index].catalog}");
+    Provider.of<RssNotifer>(context, listen: false)
+        .getRssEntityByCatalog(_tabs[index]);
+    Provider.of<FeedNotifier>(context, listen: false).getFeeds(_tabs[index]);
   }
 }

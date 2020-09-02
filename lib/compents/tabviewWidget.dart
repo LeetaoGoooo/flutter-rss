@@ -2,26 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:html/parser.dart';
 import 'package:provider/provider.dart';
 import 'package:rss/compents/rssFeedWidget.dart';
+import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/feeds_entity.dart';
 import 'package:rss/shared/feedNotifier.dart';
+import 'package:tuple/tuple.dart';
 
 class TabViewWidget extends StatefulWidget {
-  TabViewWidget({Key key}) : super(key: key);
+  final CatalogEntity catalog;
+  const TabViewWidget({Key key, this.catalog}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return TabViewWidgetState();
+    return TabViewWidgetState(catalog);
   }
 }
 
 class TabViewWidgetState extends State<TabViewWidget> {
-  TabViewWidgetState();
+  final CatalogEntity catalog;
+  TabViewWidgetState(this.catalog);
 
   @override
   // ignore: must_call_super
   Widget build(BuildContext context) {
-    return Consumer<FeedNotifier>(builder: (context, notifier, child) {
-      var _feedsList = notifier.currentFeedsList;
+    return Selector<FeedNotifier,Tuple2<CatalogEntity,List<FeedsEntity>>>(
+      selector: (_, feed) => Tuple2(feed.currentCatalog,feed.currentFeedsList),
+      shouldRebuild: (previous, next) {
+        print("pre ${previous.item1.id},next ${next.item1.id}");
+        return previous.item1.id == next.item1.id;
+      },
+      builder: (context, data, child) {
+        print("${data.item1.catalog} was rebuilded");
+      var _feedsList = data.item2;
       return SizedBox.expand(
           child: Container(
               child: ListView.builder(

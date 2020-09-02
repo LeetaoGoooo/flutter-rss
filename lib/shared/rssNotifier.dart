@@ -13,15 +13,17 @@ class RssNotifer extends ChangeNotifier {
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
   List<RssEntity> currentRssList = [];
+  CatalogEntity currentCatalog;
 
   getRssEntityByCatalog(CatalogEntity catalog) async {
     print("catalog:${catalog.id}-${catalog.catalog}");
+    currentCatalog = catalog;
     if (catalog.id == -1) {
       currentRssList = await rssDao.findAllRss();
     } else {
       currentRssList = await _getRssByCatalog(catalog);
     }
-    print("currentRssList length:${currentRssList.length}");
+    print("currentRssList length:${currentRssList.length}, currentCatalog :${catalog.catalog}");
     notifyListeners();
   }
 
