@@ -212,6 +212,18 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
               ],
             ),
           ),
+          bottomNavigationBar: BottomAppBar(
+            shape: CircularNotchedRectangle(),
+            color: Colors.purple,
+            child:Row(children: [
+              IconButton(icon: Icon(Icons.format_list_bulleted,color: Colors.white), onPressed: null),
+              Spacer(),
+              IconButton(icon:Icon(Icons.radio_button_unchecked,color: Colors.white,),onPressed: null,),
+            ],)
+          ),
+            floatingActionButton:
+      FloatingActionButton(child: Icon(Icons.star,color: Colors.white), onPressed: () {},backgroundColor: Colors.orange,),
+  floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         ));
   }
 

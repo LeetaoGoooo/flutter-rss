@@ -122,7 +122,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                   child: Column(children: <Widget>[
                     Text(
                       title,
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),
                     ),
                     Text(
                       subTitle,
@@ -156,7 +156,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           title,
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),
                         )),
                     Align(
                         alignment: Alignment.centerLeft,
