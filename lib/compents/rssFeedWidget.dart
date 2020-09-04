@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:rss/models/entity/feeds_entity.dart';
+import 'package:rss/tools/feedTool.dart';
 import 'articleHeroWidget.dart';
 
 /*
  * 
  */
 class RssFeedListTile extends StatefulWidget {
+  final String tab;
   final String coverUrl;
   final String title;
   final String subTitle;
@@ -14,6 +16,8 @@ class RssFeedListTile extends StatefulWidget {
   final String content;
   final String link;
   final int catalogId;
+  final int status;
+  final int rssId;
 
   const RssFeedListTile(
       {Key key,
@@ -23,19 +27,18 @@ class RssFeedListTile extends StatefulWidget {
       this.publishDate,
       this.author,
       this.content,
-      this.link, this.catalogId})
+      this.link, this.catalogId, this.tab, this.status, this.rssId})
       : assert(title != null),
         assert(subTitle != null),
         assert(publishDate != null),
         assert(author != null),
-        assert(content != null),
+        // assert(content != null),
         assert(link != null),
         super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return RssFeedLisTileState(
-        coverUrl, title, subTitle, publishDate, author, content, link, catalogId);
+    return RssFeedLisTileState(coverUrl, title, subTitle, publishDate, author, content, link, catalogId, tab,status,rssId);
   }
 }
 
@@ -48,15 +51,24 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
   final String content;
   final String link;
   final int catalogId;
+  final int rssId;
+  int status; // 判断是否点击
+  final String tab;
+  final FeedTool feedTool = new FeedTool();
 
 
   RssFeedLisTileState(this.coverUrl, this.title, this.subTitle,
-      this.publishDate, this.author, this.content, this.link, this.catalogId);
+      this.publishDate, this.author, this.content, this.link, this.catalogId, this.tab, this.status, this.rssId);
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        setState(() {
+          status = 1;
+        });
+        await feedTool.makeFeedRead(new FeedsEntity(null, title, link, author, publishDate, content, catalogId, rssId, status));
+        print("status $status");
         Navigator.push(context, MaterialPageRoute(builder: (_) {
           return ArticleHeroWidget(
               content: content,
@@ -67,7 +79,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
         }));
       },
       child: Hero(
-        tag: "$catalogId-$link",
+        tag: "$tab-$link",
         child: Card(
           elevation: 18.0,
           clipBehavior: Clip.antiAlias,
@@ -122,7 +134,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                   child: Column(children: <Widget>[
                     Text(
                       title,
-                      style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),
+                      style: TextStyle(color: status == 1 ? Colors.grey : Colors.black,fontWeight: FontWeight.bold),
                     ),
                     Text(
                       subTitle,
@@ -156,7 +168,7 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           title,
-                          style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),
+                          style: TextStyle(color: status == 1 ? Colors.grey : Colors.black,fontWeight: FontWeight.bold),
                         )),
                     Align(
                         alignment: Alignment.centerLeft,

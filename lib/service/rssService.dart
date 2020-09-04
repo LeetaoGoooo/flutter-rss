@@ -1,6 +1,10 @@
+/// file        : rssService.dart
+/// descrption  : 
+/// date        : 2020/09/04 12:31:18
+/// author      : Leetao
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
@@ -9,22 +13,18 @@ import 'package:rss/models/entity/rss_entity.dart';
 
 import 'package:rss/constants/globals.dart' as g;
 
-class RssNotifer extends ChangeNotifier {
+class RssService {
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
   List<RssEntity> currentRssList = [];
-  CatalogEntity currentCatalog;
 
-  getRssEntityByCatalog(CatalogEntity catalog) async {
-    print("catalog:${catalog.id}-${catalog.catalog}");
-    currentCatalog = catalog;
+  /// 根据 catalog 获取对应的 rssList
+  Future<List<RssEntity>> getRssList(CatalogEntity catalog) async {
     if (catalog.id == -1) {
-      currentRssList = await rssDao.findAllRss();
+      return await rssDao.findAllRss();
     } else {
-      currentRssList = await _getRssByCatalog(catalog);
+      return await _getRssByCatalog(catalog);
     }
-    print("currentRssList length:${currentRssList.length}, currentCatalog :${catalog.catalog}");
-    notifyListeners();
   }
 
   Future<List<RssEntity>> _getRssByCatalog(CatalogEntity catalogEntity) async {
@@ -36,7 +36,6 @@ class RssNotifer extends ChangeNotifier {
         return rssList;
       }
       multiRssList.forEach((MultiRssEntity multiRssEntity) {
-        print("multiRssList rssTitle:${multiRssEntity.rssTitle}");
         RssEntity rssItem = new RssEntity(
             multiRssEntity.rssId,
             multiRssEntity.rssTitle,

@@ -5,14 +5,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
-import 'package:provider/provider.dart';
-import 'package:rss/compents/rssChipWidget.dart';
 import 'package:rss/compents/tabviewWidget.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
+
 import 'package:rss/pages/preSub.dart';
-import 'package:rss/shared/feedNotifier.dart';
-import 'package:rss/shared/rssNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models/dao/rss_dao.dart';
 import 'models/database.dart';
@@ -38,13 +35,7 @@ Future<void> main() async {
 
   SharedPreferences prefs = await SharedPreferences.getInstance();
   prefs.clear();
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (context) => FeedNotifier()),
-      ChangeNotifierProvider(create: (context) => RssNotifer())
-    ],
-    child: PeachRssApp(),
-  ));
+  runApp(PeachRssApp());
 }
 
 class PeachRssApp extends StatelessWidget {
@@ -90,8 +81,6 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
   void initState() {
     super.initState();
     CatalogEntity catalogEntity = new CatalogEntity(-1, "All");
-    Provider.of<RssNotifer>(context, listen: false)
-        .getRssEntityByCatalog(catalogEntity);
     _tabs.add(catalogEntity);
     _getAllCatalogs().then((value) {
       setState(() {
@@ -115,116 +104,120 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
     return DefaultTabController(
         length: _tabs.length,
         child: Scaffold(
-          key: _scaffoldKey,
-          appBar: GradientAppBar(
-            // elevation: 0,
-            backgroundColorStart: Colors.deepPurple,
-            backgroundColorEnd: Colors.purple,
-            actions: <Widget>[
-              IconButton(
-                icon: const Icon(Icons.search),
-                tooltip: 'Search',
-                onPressed: () {
-                  //
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                tooltip: 'Add New Rss Source',
-                onPressed: () {
-                  _displayDialog(context);
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.done),
-                tooltip: 'Make All Read',
-                onPressed: () {
-                  // openPage(context);
-                },
-              ),
-            ],
-            bottom: TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                indicatorColor: Colors.pinkAccent,
-                tabs: _tabs
-                    .map((CatalogEntity catalog) => Tab(text: catalog.catalog))
-                    .toList()),
-          ),
-          drawer: Drawer(
-              child: Container(
-                  child: Column(children: <Widget>[
-            UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                        begin: Alignment.topRight,
-                        end: Alignment.bottomLeft,
-                        colors: [
-                      Colors.purple,
-                      Colors.deepPurple,
-                    ])),
-                currentAccountPicture: new CircleAvatar(
-                  radius: 50.0,
-                  backgroundColor: const Color(0xFF778899),
-                  backgroundImage: AssetImage('assets/default.png'),
+            key: _scaffoldKey,
+            appBar: GradientAppBar(
+              // elevation: 0,
+              backgroundColorStart: Colors.deepPurple,
+              backgroundColorEnd: Colors.purple,
+              actions: <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  tooltip: 'Search',
+                  onPressed: () {
+                    //
+                  },
                 ),
-                accountName: Text(
-                  "author:Leetao",
-                  style: TextStyle(color: Colors.white),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Add New Rss Source',
+                  onPressed: () {
+                    _displayDialog(context);
+                  },
                 ),
-                accountEmail: Text("leetao94@gmail.com",
-                    style: TextStyle(color: Colors.white))),
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Catalogs",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                IconButton(
+                  icon: const Icon(Icons.done),
+                  tooltip: 'Make All Read',
+                  onPressed: () {
+                    // openPage(context);
+                  },
                 ),
-              ),
-            ),
-            _buildDrawerMenu(context),
-          ]))),
-          body: new Container(
-            color: Colors.white,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                RssChipWidget(),
-                Expanded(
-                    child: TabBarView(
-                        controller: _tabController,
-                        children: _tabs.isEmpty
-                            ? <Widget>[]
-                            : _tabs.map((e) {
-                                //
-                                if (e.id == -1) {
-                                  Provider.of<FeedNotifier>(context,
-                                          listen: false)
-                                      .getFeeds(e);
-                                }
-                                print("catalog ${e.catalog}, id :${e.id}");
-                                return TabViewWidget(catalog: e);
-                                // return Text(e.catalog);
-                              }).toList()))
               ],
+              bottom: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  indicatorColor: Colors.pinkAccent,
+                  tabs: _tabs
+                      .map(
+                          (CatalogEntity catalog) => Tab(text: catalog.catalog))
+                      .toList()),
             ),
-          ),
-          bottomNavigationBar: BottomAppBar(
-            shape: CircularNotchedRectangle(),
-            color: Colors.purple,
-            child:Row(children: [
-              IconButton(icon: Icon(Icons.format_list_bulleted,color: Colors.white), onPressed: null),
-              Spacer(),
-              IconButton(icon:Icon(Icons.radio_button_unchecked,color: Colors.white,),onPressed: null,),
-            ],)
-          ),
-            floatingActionButton:
-      FloatingActionButton(child: Icon(Icons.star,color: Colors.white), onPressed: () {},backgroundColor: Colors.orange,),
-  floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        ));
+            drawer: Drawer(
+                child: Container(
+                    child: Column(children: <Widget>[
+              UserAccountsDrawerHeader(
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                          colors: [
+                        Colors.purple,
+                        Colors.deepPurple,
+                      ])),
+                  currentAccountPicture: new CircleAvatar(
+                    radius: 50.0,
+                    backgroundColor: const Color(0xFF778899),
+                    backgroundImage: AssetImage('assets/default.png'),
+                  ),
+                  accountName: Text(
+                    "author:Leetao",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  accountEmail: Text("leetao94@gmail.com",
+                      style: TextStyle(color: Colors.white))),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Catalogs",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+              _buildDrawerMenu(context),
+            ]))),
+            body: new Container(
+              color: Colors.white,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Expanded(
+                      child: TabBarView(
+                          controller: _tabController,
+                          children: _tabs.isEmpty
+                              ? <Widget>[]
+                              : _tabs.map((e) {
+                                  return TabViewWidget(catalog: e);
+                                }).toList()))
+                ],
+              ),
+            ),
+            bottomNavigationBar: BottomAppBar(
+                shape: CircularNotchedRectangle(),
+                color: Colors.purple,
+                child: Row(
+                  children: [
+                    Spacer(),
+                    IconButton(
+                        icon: Icon(Icons.format_list_bulleted,
+                            color: Colors.white),
+                        onPressed: null),
+                    IconButton(
+                      icon: Icon(
+                        Icons.radio_button_unchecked,
+                        color: Colors.white,
+                      ),
+                      onPressed: null,
+                    ),
+                    IconButton(
+                        icon: Icon(
+                          Icons.star,
+                          color: Colors.white,
+                        ),
+                        onPressed: null)
+                  ],
+                ))));
   }
 
   _displayDialog(BuildContext context) async {
@@ -429,10 +422,5 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
 
   void _handleTabBarSelection() {
     int index = _tabController.index;
-    print(
-        "tabbar changing current index:$index,catalog:${_tabs[index].catalog}");
-    Provider.of<RssNotifer>(context, listen: false)
-        .getRssEntityByCatalog(_tabs[index]);
-    Provider.of<FeedNotifier>(context, listen: false).getFeeds(_tabs[index]);
   }
 }

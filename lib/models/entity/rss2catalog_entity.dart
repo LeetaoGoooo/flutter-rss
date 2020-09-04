@@ -9,8 +9,9 @@ part 'rss2catalog_entity.g.dart';
   ForeignKey(
       childColumns: ['catalogId'],
       parentColumns: ['id'],
+      onDelete: ForeignKeyAction.cascade,
       entity: CatalogEntity),
-  ForeignKey(childColumns: ['rssId'], parentColumns: ['id'], entity: RssEntity)
+  ForeignKey(childColumns: ['rssId'], parentColumns: ['id'], entity: RssEntity,onDelete: ForeignKeyAction.cascade)
 ])
 @JsonSerializable()
 class Rss2CatalogEntity {
