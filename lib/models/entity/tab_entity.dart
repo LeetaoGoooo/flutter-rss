@@ -16,7 +16,7 @@ class TabEntity {
 
   TabEntity(this.rss,this.feeds);
 
-  factory TabEntity.fromJson(Map<String, dynamic> json) =>
-      _$TabEntityFromJson(json);
-  Map<String, dynamic> toJson() => _$TabEntityToJson(this);
+  // factory TabEntity.fromJson(Map<String, dynamic> json) =>
+  //     _$TabEntityFromJson(json);
+  // Map<String, dynamic> toJson() => _$TabEntityToJson(this);
 }

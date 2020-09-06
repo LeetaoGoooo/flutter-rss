@@ -75,7 +75,9 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
               link: link,
               author: author,
               pubDate: publishDate,
-              title: title);
+              title: title,
+              rssId: rssId,
+              catalogId: catalogId);
         }));
       },
       child: Hero(

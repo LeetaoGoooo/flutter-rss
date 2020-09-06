@@ -31,11 +31,7 @@ class FeedService {
   /// 支持 catalog.id 为 -1 的情况
   Future<List<FeedsEntity>> getFeeds(CatalogEntity catalog) async {
     currentCatalog = catalog;
-    final SharedPreferences prefs = await _prefs;
     if (catalog.id == -1) {
-      if (!prefs.containsKey("allFeeds")) {
-        await getAllRemoteFeeds();
-      }
       return await getLocalAllFeeds();
     } else {
       List<MultiRssEntity> multiRssList =
@@ -45,6 +41,18 @@ class FeedService {
       }
       return await getFeedsByCatalog(catalog);
     }
+  }
+
+  List<FeedsEntity> filterFeedsByStatus(List<FeedsEntity> feeds, int status) {
+    print("before filter:${feeds.length}");
+    List<FeedsEntity> _filterFeeds = [];
+    feeds.forEach((FeedsEntity element) {
+      if (element.status == status) {
+        _filterFeeds.add(element);
+      }
+    });
+    print("after filter:${_filterFeeds.length}");
+    return _filterFeeds;
   }
 
   /// 选定指定的 rss 获取 feeds
@@ -63,8 +71,7 @@ class FeedService {
         var _feed = new FeedsEntity.fromJson(_feedMap);
         _tmpFeedsList.add(_feed);
       });
-      _tmpFeedsList.sort((a, b) =>
-          DateTime.parse(a.published).compareTo(DateTime.parse(b.published)));
+      _tmpFeedsList.sort((a, b) => a.published.compareTo(b.published));
       return _tmpFeedsList;
     } else {
       print("unselected current catalog:${catalog.catalog}");
@@ -106,12 +113,19 @@ class FeedService {
   /// 获取本地缓存的所有数据
   Future<List<FeedsEntity>> getLocalAllFeeds() async {
     final SharedPreferences prefs = await _prefs;
-    List<String> _allFeedStringList = prefs.getStringList("allFeeds");
+    List<String> _allFeedStringList = [];
     List<FeedsEntity> _allFeedList = [];
+    List<MultiRssEntity> multiRssList = await rssDao.findAllMultiRss();
+    for (MultiRssEntity multiRssEntity in multiRssList) {
+      await _buildFeeds(multiRssEntity);
+      _allFeedStringList +=
+          prefs.getStringList(multiRssEntity.rssId.toString());
+    }
     if (_allFeedStringList != null) {
       _allFeedStringList.forEach((element) {
         Map _feedMap = jsonDecode(element);
         var _feed = new FeedsEntity.fromJson(_feedMap);
+        print("${_feed.title} read ${_feed.status}");
         _allFeedList.add(_feed);
       });
     }
@@ -143,26 +157,14 @@ class FeedService {
   }
 
   _buildFeedByAtom(MultiRssEntity multiRssEntity) async {
+    print("_buildFeedByAtom ${multiRssEntity.rssTitle}");
     final SharedPreferences prefs = await _prefs;
 
     List<String> _rssFeedStringList =
         prefs.getStringList(multiRssEntity.rssId.toString());
-    List<String> _allFeedStringList = prefs.getStringList("allFeeds");
 
-    List<FeedsEntity> _allFeedList = [];
     if (_rssFeedStringList == null) {
       _rssFeedStringList = [];
-      prefs.setBool('${multiRssEntity.rssId.toString()}-status', true);
-    }
-
-    if (_allFeedStringList != null) {
-      _allFeedStringList.forEach((element) {
-        Map _feedMap = jsonDecode(element);
-        var _feed = new FeedsEntity.fromJson(_feedMap);
-        _allFeedList.add(_feed);
-      });
-    } else {
-      _allFeedStringList = [];
     }
 
     FeedParser feedParser = new FeedParser(url: multiRssEntity.rssUrl);
@@ -185,36 +187,21 @@ class FeedService {
           multiRssEntity.rssId,
           0);
 
-      if (!_allFeedList.contains(newFeed)) {
-        _allFeedStringList.add(jsonEncode(newFeed));
+      if (!_rssFeedStringList.contains(jsonEncode(newFeed))) {
         _rssFeedStringList.add(jsonEncode(newFeed));
-
-        prefs.setStringList(
-            multiRssEntity.rssId.toString(), _rssFeedStringList);
-        prefs.setStringList("allFeeds", _allFeedStringList);
       }
     });
+    prefs.setStringList(multiRssEntity.rssId.toString(), _rssFeedStringList);
   }
 
   _buildFeedByRss(MultiRssEntity multiRssEntity) async {
+    print("_buildFeedByRss ${multiRssEntity.rssTitle}");
     final SharedPreferences prefs = await _prefs;
     List<String> _rssFeedStringList =
         prefs.getStringList(multiRssEntity.rssId.toString());
-    List<String> _allFeedStringList = prefs.getStringList("allFeeds");
-    List<FeedsEntity> _allFeedList = [];
 
     if (_rssFeedStringList == null) {
       _rssFeedStringList = [];
-    }
-
-    if (_allFeedStringList != null) {
-      _allFeedStringList.forEach((element) {
-        Map _feedMap = jsonDecode(element);
-        var _feed = new FeedsEntity.fromJson(_feedMap);
-        _allFeedList.add(_feed);
-      });
-    } else {
-      _allFeedStringList = [];
     }
 
     FeedParser feedParser = new FeedParser(url: multiRssEntity.rssUrl);
@@ -239,13 +226,52 @@ class FeedService {
           multiRssEntity.rssId,
           0);
 
-      if (!_allFeedList.contains(newFeed)) {
-        _allFeedStringList.add(jsonEncode(newFeed));
+      if (!_rssFeedStringList.contains(jsonEncode(newFeed))) {
         _rssFeedStringList.add(jsonEncode(newFeed));
-        prefs.setStringList(
-            multiRssEntity.rssId.toString(), _rssFeedStringList);
-        prefs.setStringList("allFeeds", _allFeedStringList);
       }
+    });
+    prefs.setStringList(multiRssEntity.rssId.toString(), _rssFeedStringList);
+  }
+
+  /// 获取所有喜欢列表
+  Future<List<FeedsEntity>> getAllFavorites() async {
+    return await feedsDao.findAllFeeds();
+  }
+
+  /// 获取该分类下的所有喜欢列表
+  Future<List<FeedsEntity>> getFavoritesByCatalogId(int catalogId) async {
+    return await feedsDao.findFeedsByCatalogId(catalogId);
+  }
+
+  /// 根据 rssid 获取对应的喜欢列表
+  Future<List<FeedsEntity>> getFavoritesByRssId(int rssId) async {
+    return await feedsDao.findFeedsByRssId(rssId);
+  }
+
+  /// 将 feed 保存到数据库中 添加到喜欢列表
+  Future<int> addFeedToFavorite(FeedsEntity feedsEntity) async {
+    return await feedsDao.insertFeeds(feedsEntity);
+  }
+
+  /// 将 feed 从喜欢列表中移除
+  Future<void> removeFeedFromFavorite(FeedsEntity feedsEntity) async {
+    return await feedsDao.deleteFeeds(feedsEntity);
+  }
+
+  /// 将指定 rssId 的列表数据标记为已读
+  Future<void> makeFeedsRead(List<RssEntity> rssList) async {
+    final SharedPreferences prefs = await _prefs;
+
+    rssList.forEach((rss) {
+      List<String> _feeds = [];
+      List<String> _rssFeedStringList = prefs.getStringList(rss.id.toString());
+      _rssFeedStringList.forEach((element) {
+        Map _feedMap = jsonDecode(element);
+        _feedMap["status"] = 1;
+        FeedsEntity _feed = new FeedsEntity.fromJson(_feedMap);
+        _feeds.add(jsonEncode(_feed));
+      });
+      prefs.setStringList(rss.id.toString(), _feeds);
     });
   }
 }

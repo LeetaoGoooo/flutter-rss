@@ -28,6 +28,7 @@ class FeedTool {
         var _feed = new FeedsEntity.fromJson(_feedMap);
         if(_feed.catalogId == feeds.catalogId && _feed.rssId == feeds.rssId && _feed.url.trim() == feeds.url.trim()) {
           index = i;
+          print("find index:$index");
           break;
         }
     }

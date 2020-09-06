@@ -13,6 +13,7 @@ import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/models/entity/tab_entity.dart';
 import 'package:rss/service/tabService.dart';
+import 'package:rss/tools/globalEventBus.dart';
 
 class TabViewWidget extends StatefulWidget {
   final CatalogEntity catalog;
@@ -24,8 +25,7 @@ class TabViewWidget extends StatefulWidget {
   }
 }
 
-class TabViewWidgetState extends State<TabViewWidget>
-    with AutomaticKeepAliveClientMixin {
+class TabViewWidgetState extends State<TabViewWidget> {
   final CatalogEntity catalog;
   final RssDao rssDao = g.rssDao;
   final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
@@ -33,7 +33,10 @@ class TabViewWidgetState extends State<TabViewWidget>
   RssEntity selectedRss;
   Future<TabEntity> tab;
   bool showToTopBtn = false;
+  GlobalEventBus eventBus = new GlobalEventBus();
+
   ScrollController _scrollController;
+
   TabViewWidgetState(this.catalog);
 
   @override
@@ -44,7 +47,6 @@ class TabViewWidgetState extends State<TabViewWidget>
     _scrollController = ScrollController();
 
     _scrollController.addListener(() {
-      print(_scrollController.offset);
       if (_scrollController.offset ==
           _scrollController.position.maxScrollExtent) {
         HapticFeedback.heavyImpact(); // 震动反馈
@@ -63,22 +65,57 @@ class TabViewWidgetState extends State<TabViewWidget>
 
   @override
   void dispose() {
+    print("dispose...");
     super.dispose();
     _scrollController?.dispose();
   }
 
-  Future<TabEntity> getTab({RssEntity rssEntity, bool selected}) {
+  Future<TabEntity> getTab({RssEntity rssEntity, bool selected, int status}) {
     return tabService.getTabs(catalog,
-        rssEntity: rssEntity, selected: selected);
+        rssEntity: selectedRss, selected: selected, status: status);
+  }
+
+  void filterFeeds({RssEntity rssEntity, bool selected, int status}) {
+    bool selected = false;
+    if (selectedRss != null) {
+      selected = true;
+    }
+    print(
+        "current catalog:${catalog.catalog} selectedRss:${selectedRss?.title} status:$status");
+    setState(() {
+      tab = tabService.getTabs(catalog,
+          rssEntity: selectedRss, selected: selected, status: status);
+    });
+  }
+
+  void getFavorites() {
+    setState(() {
+      tab = tabService.getFavorites(catalog, rssId: selectedRss?.id);
+    });
+  }
+
+  Future<void> makeAllFeedsRead() async {
+    bool selected = false;
+    if (selectedRss != null) {
+      selected = true;
+    }
+    await tabService.makeFeedsRead(catalog,
+        rssEntity: selectedRss, selected: selected);
+    setState(() {
+      tab = getTab(rssEntity: selectedRss, selected: selected);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    // super.build(context);
     return FutureBuilder<TabEntity>(
         future: tab,
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
+          print("rebuild....");
+
+          if (snapshot.hasData &&
+              snapshot.connectionState == ConnectionState.done) {
             TabEntity _tabEntity = snapshot.data;
             List<FeedsEntity> _feedsList = _tabEntity.feeds;
             List<RssEntity> _rssEntityList = _tabEntity.rss;
@@ -90,61 +127,69 @@ class TabViewWidgetState extends State<TabViewWidget>
                             Widget>[
                           Expanded(
                               flex: 1,
-                              child: ListView.builder(
-                                  itemCount: _rssEntityList.length,
-                                  physics: BouncingScrollPhysics(),
-                                  scrollDirection: Axis.horizontal,
-                                  shrinkWrap: true,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    RssEntity rssEntity = _rssEntityList[index];
-                                    print("rss ${rssEntity.title}");
-                                    return RawChip(
-                                      avatar: (selectedRss == null ||
-                                              selectedRss.id != rssEntity.id)
-                                          ? null
-                                          : CircleAvatar(),
-                                      selected: (selectedRss == null ||
-                                              selectedRss.id != rssEntity.id)
-                                          ? false
-                                          : true,
-                                      label: Text(rssEntity.title),
-                                      selectedColor: Theme.of(context)
-                                          .chipTheme
-                                          .selectedColor,
-                                      selectedShadowColor: Theme.of(context)
-                                          .chipTheme
-                                          .selectedShadowColor,
-                                      deleteIcon: Icon(Icons.highlight_off,
-                                          color: Theme.of(context)
-                                              .chipTheme
-                                              .deleteIconColor,
-                                          size: 18),
-                                      onDeleted: () async {
-                                        await _unsubcribeDialog(rssEntity);
-                                      },
-                                      onSelected: (value) {
-                                        print("value:$value");
-                                        if (selectedRss == rssEntity) {
-                                          setState(() {
-                                            selectedRss = null;
-                                          });
-                                        } else {
-                                          setState(() {
-                                            selectedRss = rssEntity;
-                                          });
-                                        }
+                              child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: ListView.builder(
+                                      itemCount: _rssEntityList.length,
+                                      physics: BouncingScrollPhysics(),
+                                      scrollDirection: Axis.horizontal,
+                                      shrinkWrap: true,
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        RssEntity rssEntity =
+                                            _rssEntityList[index];
+                                        print("rss ${rssEntity.title}");
+                                        return Padding(
+                                            padding: EdgeInsets.fromLTRB(
+                                                16, 0, 0, 0),
+                                            child: RawChip(
+                                              avatar: (selectedRss == null ||
+                                                      selectedRss.id !=
+                                                          rssEntity.id)
+                                                  ? null
+                                                  : CircleAvatar(
+                                                      backgroundColor:
+                                                          Colors.purple[300]),
+                                              selected: (selectedRss == null ||
+                                                      selectedRss.id !=
+                                                          rssEntity.id)
+                                                  ? false
+                                                  : true,
+                                              label: Text(rssEntity.title),
+                                              selectedColor: Colors.purple[100],
+                                              selectedShadowColor:
+                                                  Theme.of(context)
+                                                      .chipTheme
+                                                      .selectedShadowColor,
+                                              deleteIcon: Icon(Icons.cancel,
+                                                  color: Colors.grey, size: 18),
+                                              onDeleted: () async {
+                                                await _unsubcribeDialog(
+                                                    rssEntity);
+                                              },
+                                              onSelected: (value) {
+                                                print(
+                                                    "value:$value selectedRss:${selectedRss?.title} ${rssEntity.title}");
+                                                if (selectedRss == rssEntity) {
+                                                  setState(() {
+                                                    selectedRss = null;
+                                                  });
+                                                } else {
+                                                  setState(() {
+                                                    selectedRss = rssEntity;
+                                                  });
+                                                }
 
-                                        print(
-                                            "selected:${selectedRss.title} selected:$value");
-                                        setState(() {
-                                          tab = getTab(
-                                              rssEntity: selectedRss,
-                                              selected: value);
-                                        });
-                                      },
-                                    );
-                                  })),
+                                                print(
+                                                    "selected:${selectedRss?.title} selected:$value");
+                                                setState(() {
+                                                  tab = getTab(
+                                                      rssEntity: selectedRss,
+                                                      selected: value);
+                                                });
+                                              },
+                                            ));
+                                      }))),
                           Expanded(
                               flex: 10,
                               child: ListView.builder(
@@ -153,6 +198,8 @@ class TabViewWidgetState extends State<TabViewWidget>
                                   shrinkWrap: true,
                                   itemCount: _feedsList.length,
                                   itemBuilder: (context, index) {
+                                    print(
+                                        "${_feedsList[index].title}'s status:${_feedsList[index].status}");
                                     FeedsEntity _feedsEntity =
                                         _feedsList[index];
                                     String _coverUrl =
@@ -208,7 +255,7 @@ class TabViewWidgetState extends State<TabViewWidget>
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [Text("No Data")],
+                        children: [Container()],
                       ),
                 onRefresh: () {
                   bool _selected = false;
@@ -281,6 +328,6 @@ class TabViewWidgetState extends State<TabViewWidget>
     );
   }
 
-  @override
-  bool get wantKeepAlive => true;
+  // @override
+  // bool get wantKeepAlive => true;
 }

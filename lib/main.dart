@@ -8,6 +8,7 @@ import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:rss/compents/tabviewWidget.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
+import 'package:rss/pages/catalogManage.dart';
 
 import 'package:rss/pages/preSub.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,9 +20,9 @@ import 'constants/globals.dart' as g;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-//   final migration2to3 = Migration(2, 3, (database) async {
-//   await database.execute('CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` INTEGER, `rssId` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
-// });
+  // final migration2to3 = Migration(3, 4, (database) async {
+  //   await database.execute('DELETE FROM feeds');
+  // });
   await $FloorAppDatabase
       .databaseBuilder('rss.db')
       // .addMigrations([migration2to3])
@@ -64,31 +65,47 @@ class PeachRssHomeWidget extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<PeachRssHomeWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   TextEditingController _textFieldController = TextEditingController();
   bool _urlValidate = true;
   String _feedUrlHintMsg = 'Url is not validate';
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
   List<CatalogEntity> drawerMeunItems;
-  List<CatalogEntity> _tabs = [];
+  List<CatalogEntity> _tabs = [CatalogEntity(-1, "All")];
+  List<Widget> _tabViews = [];
   RssEntity selectedRss;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  var _tapDownPosition;
+  List<GlobalKey<TabViewWidgetState>> _tabKeys = [];
   TabController _tabController;
+  IconData _unread = Icons.radio_button_unchecked;
+  IconData _star = Icons.star_border;
+  IconData _all = Icons.view_list;
 
   @override
   void initState() {
     super.initState();
-    CatalogEntity catalogEntity = new CatalogEntity(-1, "All");
-    _tabs.add(catalogEntity);
+    var _key = GlobalKey<TabViewWidgetState>();
+    _tabKeys.add(_key);
+    _tabViews.add(TabViewWidget(key: _key, catalog: _tabs[0]));
+    _tabController = new TabController(length: _tabs.length, vsync: this);
     _getAllCatalogs().then((value) {
+      List<Widget> _widgets = [];
+      value.forEach((element) {
+        var _key = GlobalKey<TabViewWidgetState>();
+        _tabKeys.add(_key);
+        _widgets.add(TabViewWidget(key: _key, catalog: element));
+      });
       setState(() {
         _tabs += value;
-        _tabController = new TabController(length: _tabs.length, vsync: this);
-        _tabController.addListener(() {
-          _handleTabBarSelection();
-        });
+        _tabViews += _widgets;
+        _tabController = new TabController(length: _tabs.length, vsync: this)
+          ..addListener(() {
+            if (_tabController.index.toDouble() ==
+                _tabController.animation.value) {
+              _filtersBtton(0);
+            }
+          });
       });
     });
   }
@@ -101,123 +118,148 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-        length: _tabs.length,
-        child: Scaffold(
-            key: _scaffoldKey,
-            appBar: GradientAppBar(
-              // elevation: 0,
-              backgroundColorStart: Colors.deepPurple,
-              backgroundColorEnd: Colors.purple,
-              actions: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  tooltip: 'Search',
-                  onPressed: () {
-                    //
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: 'Add New Rss Source',
-                  onPressed: () {
-                    _displayDialog(context);
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.done),
-                  tooltip: 'Make All Read',
-                  onPressed: () {
-                    // openPage(context);
-                  },
-                ),
-              ],
-              bottom: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  indicatorColor: Colors.pinkAccent,
-                  tabs: _tabs
-                      .map(
-                          (CatalogEntity catalog) => Tab(text: catalog.catalog))
-                      .toList()),
-            ),
-            drawer: Drawer(
-                child: Container(
-                    child: Column(children: <Widget>[
-              UserAccountsDrawerHeader(
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                        Colors.purple,
-                        Colors.deepPurple,
-                      ])),
-                  currentAccountPicture: new CircleAvatar(
-                    radius: 50.0,
-                    backgroundColor: const Color(0xFF778899),
-                    backgroundImage: AssetImage('assets/default.png'),
-                  ),
-                  accountName: Text(
-                    "author:Leetao",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  accountEmail: Text("leetao94@gmail.com",
-                      style: TextStyle(color: Colors.white))),
-              Padding(
-                padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
+    return Scaffold(
+        key: _scaffoldKey,
+        appBar: GradientAppBar(
+            // elevation: 0,
+            backgroundColorStart: Colors.deepPurple,
+            backgroundColorEnd: Colors.purple,
+            actions: <Widget>[
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: 'Search',
+                onPressed: () {
+                  //
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                tooltip: 'Add New Rss Source',
+                onPressed: () {
+                  _displayDialog(context);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.done),
+                tooltip: 'Make All Read',
+                onPressed: () {
+                  // openPage(context);
+                  _showReadBottomSheet(context);
+                },
+              ),
+            ],
+            bottom: PreferredSize(
+                preferredSize: Size.fromHeight(40),
                 child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Catalogs",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-              _buildDrawerMenu(context),
-            ]))),
-            body: new Container(
-              color: Colors.white,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Expanded(
-                      child: TabBarView(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 0, 0),
+                      child: TabBar(
                           controller: _tabController,
-                          children: _tabs.isEmpty
-                              ? <Widget>[]
-                              : _tabs.map((e) {
-                                  return TabViewWidget(catalog: e);
-                                }).toList()))
-                ],
+                          isScrollable: true,
+                          indicatorColor: Colors.pinkAccent,
+                          tabs: _tabs
+                              .map((CatalogEntity catalog) =>
+                                  Tab(text: catalog.catalog))
+                              .toList())),
+                ))),
+        drawer: Drawer(
+            child: Container(
+                child: Column(children: <Widget>[
+          UserAccountsDrawerHeader(
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                    Colors.purple,
+                    Colors.deepPurple,
+                  ])),
+              currentAccountPicture: new CircleAvatar(
+                radius: 50.0,
+                backgroundColor: const Color(0xFF778899),
+                backgroundImage: AssetImage('assets/default.png'),
+              ),
+              accountName: Text(
+                "author:Leetao",
+                style: TextStyle(color: Colors.white),
+              ),
+              accountEmail: Text("leetao94@gmail.com",
+                  style: TextStyle(color: Colors.white))),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Settings",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
               ),
             ),
-            bottomNavigationBar: BottomAppBar(
-                shape: CircularNotchedRectangle(),
-                color: Colors.purple,
-                child: Row(
-                  children: [
-                    Spacer(),
-                    IconButton(
-                        icon: Icon(Icons.format_list_bulleted,
-                            color: Colors.white),
-                        onPressed: null),
-                    IconButton(
-                      icon: Icon(
-                        Icons.radio_button_unchecked,
-                        color: Colors.white,
-                      ),
-                      onPressed: null,
+          ),
+          // _buildDrawerMenu(context),
+          // Divider(),
+          ListTile(
+            leading: Icon(Icons.class_),
+            title: Text("Catalogs"),
+            onTap: () {
+              Navigator.of(context).push(new MaterialPageRoute(builder: (_) {
+                return new CatalogManage();
+              }));
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.settings),
+            title: Text("Settings"),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: Icon(Icons.lightbulb_outline),
+            title: Text("Dark Model"),
+            onTap: () {},
+          )
+        ]))),
+        body: new Container(
+          color: Colors.white,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Expanded(
+                  child: TabBarView(
+                      controller: _tabController, children: _tabViews))
+            ],
+          ),
+        ),
+        bottomNavigationBar: BottomAppBar(
+            shape: CircularNotchedRectangle(),
+            color: Colors.purple,
+            child: Row(
+              children: [
+                Spacer(),
+                IconButton(
+                    icon: Icon(_all, color: Colors.white),
+                    onPressed: () {
+                      _filterFeeds(0);
+                    }),
+                IconButton(
+                  icon: Icon(
+                    _unread,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    _filterFeeds(1, status: 0);
+                  },
+                ),
+                IconButton(
+                    icon: Icon(
+                      _star,
+                      color: Colors.white,
                     ),
-                    IconButton(
-                        icon: Icon(
-                          Icons.star,
-                          color: Colors.white,
-                        ),
-                        onPressed: null)
-                  ],
-                ))));
+                    onPressed: () {
+                      _filterFeeds(2, status: 0);
+                    })
+              ],
+            )));
   }
 
   _displayDialog(BuildContext context) async {
@@ -348,54 +390,7 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
           itemCount: drawerMeunItems.length,
           itemBuilder: (BuildContext context, int index) {
             CatalogEntity catalog = drawerMeunItems[index];
-            return GestureDetector(
-                onTapDown: (details) {
-                  _tapDownPosition = details.globalPosition;
-                },
-                onLongPress: () {
-                  final RenderBox overlay =
-                      Overlay.of(context).context.findRenderObject();
-                  var _position = RelativeRect.fromRect(
-                      _tapDownPosition &
-                          const Size(40, 40), // smaller rect, the touch area
-                      Offset.zero &
-                          overlay.size // Bigger rect, the entire screen
-                      );
-                  showMenu(
-                    position: _position,
-                    items: <PopupMenuEntry>[
-                      PopupMenuItem(
-                        value: catalog,
-                        child: Column(
-                          children: <Widget>[
-                            Text(
-                              catalog.catalog,
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            Divider()
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: catalog,
-                        child: FlatButton.icon(
-                            icon: Icon(Icons.delete),
-                            label: Text("Delete"),
-                            onPressed: () {
-                              print('delete $catalog');
-                            }),
-                      ),
-                      PopupMenuItem(
-                          value: catalog,
-                          child: FlatButton.icon(
-                              icon: Icon(Icons.edit),
-                              label: Text("Edit"),
-                              onPressed: () {}))
-                    ],
-                    context: context,
-                  ).then((value) => null);
-                },
-                child: _buildDrawerMenuItem(catalog));
+            return _buildDrawerMenuItem(catalog);
           },
         ));
       },
@@ -405,22 +400,88 @@ class _MyHomePageState extends State<PeachRssHomeWidget>
 
   Widget _buildDrawerMenuItem(CatalogEntity catalogEntity) {
     return ListTile(
-        leading: Icon(Icons.loyalty),
-        title: Text(catalogEntity.catalog),
-        trailing: Chip(label: Text("0")),
-        onTap: () {
-          print("_buildDrawerMenuItem catalog: ${catalogEntity.catalog}");
-          _tabController.animateTo(_tabs.indexOf(catalogEntity));
-          Navigator.pop(context);
-          // _getRssByCatalog(catalogEntity);
-        });
+        hoverColor: Colors.purple[100],
+        autofocus: true,
+        title: Text(
+          catalogEntity.catalog,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        onTap: () {});
   }
 
   Future<List<CatalogEntity>> _getAllCatalogs() {
     return catalogDao.findAllCatalogs();
   }
 
-  void _handleTabBarSelection() {
+  void _filterFeeds(int type, {status}) {
+    _filtersBtton(type);
+    if (type == 2) {
+      _getFavorites();
+    } else {
+      int index = _tabController.index;
+      print("current index:$index,current state:${_tabKeys[index]}");
+      _tabKeys[index].currentState?.filterFeeds(status: status);
+    }
+  }
+
+  void _getFavorites() {
     int index = _tabController.index;
+    print("current index:$index,current state:${_tabKeys[index]}");
+    _tabKeys[index].currentState?.getFavorites();
+  }
+
+  void _filtersBtton(int type) {
+    switch (type) {
+      case 0:
+        setState(() {
+          _all = Icons.view_list;
+          _star = Icons.star_border;
+          _unread = Icons.radio_button_unchecked;
+        });
+        break;
+      case 1:
+        setState(() {
+          _all = Icons.format_list_bulleted;
+          _star = Icons.star_border;
+          _unread = Icons.radio_button_checked;
+        });
+        break;
+      case 2:
+        setState(() {
+          _all = Icons.format_list_bulleted;
+          _star = Icons.star;
+          _unread = Icons.radio_button_unchecked;
+        });
+        break;
+      default:
+    }
+  }
+
+  void _showReadBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return new Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              new ListTile(
+                leading: Icon(Icons.done),
+                title: new Text("Make All as Read"),
+                onTap: () async {
+                  int index = _tabController.index;
+                  _tabKeys[index].currentState?.makeAllFeedsRead();
+                  Navigator.pop(context);
+                },
+              ),
+              new ListTile(
+                leading: Icon(Icons.cancel),
+                title: new Text("Cancle"),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        });
   }
 }

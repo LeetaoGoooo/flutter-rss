@@ -18,4 +18,11 @@ class RssEntity {
       _$RssEntityFromJson(json);
 
   Map<String, dynamic> toJson() => _$RssEntityToJson(this);
+
+    @override
+  bool operator ==(o) =>
+      o is RssEntity && o.id == id && o.id == id;
+
+  @override
+  int get hashCode => id.hashCode ^ title.hashCode;
 }
