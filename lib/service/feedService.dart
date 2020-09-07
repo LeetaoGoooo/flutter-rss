@@ -274,4 +274,26 @@ class FeedService {
       prefs.setStringList(rss.id.toString(), _feeds);
     });
   }
+
+  /// 获取 feeds 的阅读情况
+  Future<Map<String, int>> getFeedReadStatus(String rssId) async {
+    final SharedPreferences prefs = await _prefs;
+    List<String> _rssFeedStringList = prefs.getStringList(rssId);
+    int all = _rssFeedStringList.length;
+    int read = 0;
+    int unread = 0;
+    _rssFeedStringList.forEach((element) {
+      Map _feedMap = jsonDecode(element);
+      if(_feedMap['status'] == 1) {
+          read +=1;
+      }else {
+          unread +=1;
+      }
+    });
+    return {
+      "all":all,
+      "read":read,
+      "unread":unread
+    };
+  }
 }
