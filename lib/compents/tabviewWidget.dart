@@ -301,6 +301,9 @@ class TabViewWidgetState extends State<TabViewWidget> {
             FlatButton(
               child: Text("Yes"),
               onPressed: () async {
+                /// TODO 完善取消订阅逻辑
+                /// 取消订阅时判断是否有其他非 -1 的 catalog
+                /// 没有则新增 catalog 为 -1 的 rss2catalogDao
                 Rss2CatalogEntity rss2catalogEntity =
                     await rss2catalogDao.findCatalogByRssId(rssEntity.id);
                 await rss2catalogDao.deleteRss2Catalog(rss2catalogEntity);

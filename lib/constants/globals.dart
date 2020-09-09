@@ -5,3 +5,4 @@ var feedsDao;
 
 final int FEED_READ = 1;
 final int FEED_UNREAD = 0;
+final int WAITS = 3;

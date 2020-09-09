@@ -10,7 +10,8 @@ import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
-import '../constants/globals.dart' as g;
+import 'package:rss/constants/globals.dart' as g;
+
 
 class RssCatalogPage extends StatefulWidget {
   final String title;
@@ -151,6 +152,7 @@ class _RssCatalogWidget extends State<RssCatalogPage> {
     // 判断是否新增 catalog
     var newCatalog = _newCatalogController.text.trim();
     if (newCatalog.isNotEmpty) {
+      print("newCatalog  is not empty");
       CatalogEntity catalogEntityNew = new CatalogEntity(null, newCatalog);
       var catalogId = await catalogDao.insertCatalog(catalogEntityNew);
       Rss2CatalogEntity rss2catalogEntity =
@@ -158,6 +160,8 @@ class _RssCatalogWidget extends State<RssCatalogPage> {
       rss2CatalogEntities.add(rss2catalogEntity);
     }
     if (selectedCatalogs.isNotEmpty) {
+      print("selectedCatalogs  is not empty");
+
       selectedCatalogs.forEach((CatalogEntity catalogEntity) {
         Rss2CatalogEntity entity =
             new Rss2CatalogEntity(null, catalogEntity.id, rssId);
@@ -165,6 +169,7 @@ class _RssCatalogWidget extends State<RssCatalogPage> {
       });
     }
     if (rss2CatalogEntities.length == 0) {
+      print("rss2CatalogEntities  is  empty");
       Rss2CatalogEntity defaultEntity = new Rss2CatalogEntity(null, -1, rssId);
       rss2CatalogEntities.add(defaultEntity);
     }

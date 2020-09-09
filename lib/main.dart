@@ -20,12 +20,12 @@ import 'constants/globals.dart' as g;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // final migration2to3 = Migration(3, 4, (database) async {
-  //   await database.execute('DELETE FROM feeds');
+  // final migration4to5 = Migration(4, 5, (database) async {
+  //   await database.execute('DELETE FROM rss');
   // });
   await $FloorAppDatabase
-      .databaseBuilder('rss.db')
-      // .addMigrations([migration2to3])
+      .databaseBuilder('rss-v001.db')
+      // .addMigrations([migration4to5])
       .build()
       .then((database) {
     g.catalogDao = database.catalogDao;

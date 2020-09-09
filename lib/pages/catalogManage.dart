@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 /// file        : catalogManage.dart
@@ -8,6 +9,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:rss/compents/rssCardWidget.dart';
+import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/constants/globals.dart' as g;
@@ -21,32 +23,36 @@ class CatalogManage extends StatefulWidget {
 
 class CatalogManageStateWidget extends State<CatalogManage> {
   final RssDao rssDao = g.rssDao;
+  final CatalogDao catalogDao = g.catalogDao;
   final FeedService feedService = new FeedService();
   final client = http.Client();
-  Future<List<MultiRssEntity>> _multiRssList;
+  Future<List<MultiRssEntity>> multiRssList;
   List<Widget> _avatars = [];
   Map _rssMap = HashMap();
+  List<String> _catalogList = [];
 
   @override
   void initState() {
     super.initState();
-    // setState(() {
-    _multiRssList = getAllMultiRssEntity();
-    // });
+    multiRssList = getAllMultiRssEntity();
   }
 
   Future<List<MultiRssEntity>> getAllMultiRssEntity() async {
     print("getAllMultiRssEntity");
-    var mutiRssList = await rssDao.findAllMultiRss();
+    List<MultiRssEntity> _multiRssList = await rssDao.findAllMultiRss();
     List<String> _webSiteUrl = [];
     List<String> _rssIdList = [];
-    mutiRssList.forEach((element) {
-      _webSiteUrl.add(element.rssUrl);
-      _rssIdList.add(element.rssId.toString());
-    });
+
+    for (MultiRssEntity multiRssEntity in _multiRssList) {
+      _webSiteUrl.add(multiRssEntity.rssUrl);
+      _rssIdList.add(multiRssEntity.rssId.toString());
+      var _catalog = await catalogDao.findCatalogById(multiRssEntity.catalogId);
+      _catalogList.add(_catalog?.catalog);
+    }
     _avatars = await _getAllWebSiteIcon(_webSiteUrl);
     _rssMap = await _getRssReadMap(_rssIdList);
-    return mutiRssList;
+    print("mutiRssList length:${_multiRssList.length}");
+    return _multiRssList;
   }
 
   @override
@@ -58,56 +64,49 @@ class CatalogManageStateWidget extends State<CatalogManage> {
         // elevation: 0,
         backgroundColorStart: Colors.deepPurple,
         backgroundColorEnd: Colors.purple,
+        actions: [
+          IconButton(icon: Icon(Icons.add), onPressed: (){
+            print("add new catalog");
+          })
+        ],
       ),
       body: FutureBuilder<List<MultiRssEntity>>(
-        future: _multiRssList,
-        builder: (context, snapshot) {
+        future: multiRssList,
+        builder: (context, AsyncSnapshot<List<MultiRssEntity>> snapshot) {
           if (snapshot.hasData &&
               snapshot.connectionState == ConnectionState.done) {
+            print("data length:${snapshot.data.length}");
+            List<MultiRssEntity> rssList = snapshot.data;
             return RefreshIndicator(
               child: GridView.builder(
-                  itemCount: snapshot.data.length,
+                  itemCount: rssList.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2),
                   itemBuilder: (context, index) {
-                    MultiRssEntity multiRssEntity = snapshot.data[index];
-                    // return Card(
-                    //     elevation: 18.0,
-                    //     clipBehavior: Clip.antiAlias,
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(15.0),
-                    //     ),
-                    //     child: Column(
-                    //         mainAxisAlignment: MainAxisAlignment.center,
-                    //         children: [
-                    //           CircleAvatar(
-                    //             backgroundColor: Colors.grey,
-                    //             foregroundColor: Colors.white,
-                    //             child: _avatars.isEmpty
-                    //                 ? _defaultImage
-                    //                 : _avatars[index],
-                    //           ),
-                    //           ListTile(
-                    //             title:
-                    //                 Center(child: Text(multiRssEntity.rssTitle)),
-                    //             subtitle:
-                    //                 Center(child: Text(multiRssEntity.rssTitle)),
-                    //           )
-                    //         ])
-                    //         );
+                    MultiRssEntity multiRssEntity = rssList[index];
+                    print(multiRssEntity.toJson());
                     return RssCard(
-                        avatar: _avatars[index],
-                        title: multiRssEntity.rssTitle,
-                        subTitle: multiRssEntity.rssTitle,
-                        all: _rssMap[multiRssEntity.rssId.toString()]["all"],
-                        read: _rssMap[multiRssEntity.rssId.toString()]["read"],
-                        unread: _rssMap[multiRssEntity.rssId.toString()]
-                            ["unread"]);
+                      avatar: _avatars[index],
+                      title: multiRssEntity.rssTitle,
+                      subTitle: _catalogList[index] == null
+                          ? "All"
+                          : _catalogList[index],
+                      all: _rssMap[multiRssEntity.rssId.toString()] == null
+                          ? "NaN"
+                          : _rssMap[multiRssEntity.rssId.toString()]["all"],
+                      read: _rssMap[multiRssEntity.rssId.toString()] == null
+                          ? "NaN"
+                          : _rssMap[multiRssEntity.rssId.toString()]["read"],
+                      unread: _rssMap[multiRssEntity.rssId.toString()] == null
+                          ? "NaN"
+                          : _rssMap[multiRssEntity.rssId.toString()]["unread"],
+                      rssId: multiRssEntity.rssId,
+                      catalogId: multiRssEntity.catalogId,
+                      url: multiRssEntity.rssUrl,
+                      voidCallback: refresh,
+                    );
                   }),
-              onRefresh: () {
-                  _multiRssList = getAllMultiRssEntity();
-                return _multiRssList;
-              },
+              onRefresh: refresh,
             );
           } else if (snapshot.hasError) {
             print(snapshot.error);
@@ -120,10 +119,6 @@ class CatalogManageStateWidget extends State<CatalogManage> {
         },
       ),
     );
-  }
-
-  Widget _buildCardList(data) {
-    
   }
 
   Future<List<Widget>> _getAllWebSiteIcon(List<String> urlList) async {
@@ -140,7 +135,6 @@ class CatalogManageStateWidget extends State<CatalogManage> {
     var _map = HashMap();
     for (var i = 0; i < rssLen; i++) {
       _map[rssIdList[i]] = await feedService.getFeedReadStatus(rssIdList[i]);
-      print(_map);
     }
     return _map;
   }
@@ -179,5 +173,11 @@ class CatalogManageStateWidget extends State<CatalogManage> {
     } catch (e) {
       return null;
     }
+  }
+
+  Future<List<MultiRssEntity>> refresh() {
+    setState(() {
+      multiRssList = getAllMultiRssEntity();
+    });
   }
 }

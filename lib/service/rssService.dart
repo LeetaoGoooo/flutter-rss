@@ -5,9 +5,12 @@
 
 import 'dart:async';
 
+import 'package:floor/floor.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
+import 'package:rss/models/dao/rss2catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
+import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 
@@ -16,6 +19,7 @@ import 'package:rss/constants/globals.dart' as g;
 class RssService {
   final RssDao rssDao = g.rssDao;
   final CatalogDao catalogDao = g.catalogDao;
+  final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   List<RssEntity> currentRssList = [];
 
   /// 根据 catalog 获取对应的 rssList
@@ -45,5 +49,14 @@ class RssService {
       });
     });
     return rssList;
+  }
+
+  @transaction
+  Future<void> updateRss(int rssId,String title,String url, int catalogId) async {
+    Rss2CatalogEntity rss2catalogEntity = await rss2catalogDao.findCatalogByRssId(rssId);
+    Rss2CatalogEntity rss2catalogUpdate = Rss2CatalogEntity(rss2catalogEntity.id, catalogId, rssId);
+    await rss2catalogDao.updateRss2Catalog(rss2catalogUpdate);
+    RssEntity rssEntity = await rssDao.findRssById(rssId);
+    await rssDao.updateRss(RssEntity(rssId,title,url,rssEntity.type));
   }
 }

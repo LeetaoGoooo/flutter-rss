@@ -90,9 +90,9 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `rss` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `type` TEXT)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `rss2catalog` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `catalogId` INTEGER, `rssId` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
+            'CREATE TABLE IF NOT EXISTS `rss2catalog` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `catalogId` INTEGER, `rssId` INTEGER)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` INTEGER, `rssId` INTEGER, `status` INTEGER, FOREIGN KEY (`catalogId`) REFERENCES `catalogs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, FOREIGN KEY (`rssId`) REFERENCES `rss` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+            'CREATE TABLE IF NOT EXISTS `feeds` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT, `url` TEXT, `author` TEXT, `published` TEXT, `content` TEXT, `catalogId` INTEGER, `rssId` INTEGER, `status` INTEGER)');
 
         await database.execute(
             '''CREATE VIEW IF NOT EXISTS `multi_rss` AS SELECT b.catalogId AS catalogId,a.id AS rssId,a.type AS rssType,a.url AS rssUrl, a.title AS rssTitle FROM rss2catalog b INNER JOIN rss a ON a.id == b.rssId''');
@@ -195,6 +195,16 @@ class _$RssDao extends RssDao {
                   'url': item.url,
                   'type': item.type
                 }),
+        _rssEntityUpdateAdapter = UpdateAdapter(
+            database,
+            'rss',
+            ['id'],
+            (RssEntity item) => <String, dynamic>{
+                  'id': item.id,
+                  'title': item.title,
+                  'url': item.url,
+                  'type': item.type
+                }),
         _rssEntityDeletionAdapter = DeletionAdapter(
             database,
             'rss',
@@ -226,6 +236,8 @@ class _$RssDao extends RssDao {
       row['rssTitle'] as String);
 
   final InsertionAdapter<RssEntity> _rssEntityInsertionAdapter;
+
+  final UpdateAdapter<RssEntity> _rssEntityUpdateAdapter;
 
   final DeletionAdapter<RssEntity> _rssEntityDeletionAdapter;
 
@@ -273,6 +285,12 @@ class _$RssDao extends RssDao {
   }
 
   @override
+  Future<int> updateRss(RssEntity rssEntity) {
+    return _rssEntityUpdateAdapter.updateAndReturnChangedRows(
+        rssEntity, OnConflictStrategy.abort);
+  }
+
+  @override
   Future<void> deleteRss(RssEntity rssEntity) async {
     await _rssEntityDeletionAdapter.delete(rssEntity);
   }
@@ -289,6 +307,15 @@ class _$Rss2CatalogDao extends Rss2CatalogDao {
         _rss2CatalogEntityInsertionAdapter = InsertionAdapter(
             database,
             'rss2catalog',
+            (Rss2CatalogEntity item) => <String, dynamic>{
+                  'id': item.id,
+                  'catalogId': item.catalogId,
+                  'rssId': item.rssId
+                }),
+        _rss2CatalogEntityUpdateAdapter = UpdateAdapter(
+            database,
+            'rss2catalog',
+            ['id'],
             (Rss2CatalogEntity item) => <String, dynamic>{
                   'id': item.id,
                   'catalogId': item.catalogId,
@@ -315,6 +342,8 @@ class _$Rss2CatalogDao extends Rss2CatalogDao {
           row['id'] as int, row['catalogId'] as int, row['rssId'] as int);
 
   final InsertionAdapter<Rss2CatalogEntity> _rss2CatalogEntityInsertionAdapter;
+
+  final UpdateAdapter<Rss2CatalogEntity> _rss2CatalogEntityUpdateAdapter;
 
   final DeletionAdapter<Rss2CatalogEntity> _rss2CatalogEntityDeletionAdapter;
 
@@ -349,6 +378,12 @@ class _$Rss2CatalogDao extends Rss2CatalogDao {
   Future<int> insertRss2Catalog(Rss2CatalogEntity rss2CatalogEntityList) {
     return _rss2CatalogEntityInsertionAdapter.insertAndReturnId(
         rss2CatalogEntityList, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateRss2Catalog(Rss2CatalogEntity rss2catalogEntity) {
+    return _rss2CatalogEntityUpdateAdapter.updateAndReturnChangedRows(
+        rss2catalogEntity, OnConflictStrategy.abort);
   }
 
   @override

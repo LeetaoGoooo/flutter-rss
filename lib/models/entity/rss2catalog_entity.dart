@@ -1,18 +1,10 @@
 import 'package:floor/floor.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rss/models/entity/catalog_entity.dart';
-import 'package:rss/models/entity/rss_entity.dart';
+
 
 part 'rss2catalog_entity.g.dart';
 
-@Entity(tableName: 'rss2catalog', foreignKeys: [
-  ForeignKey(
-      childColumns: ['catalogId'],
-      parentColumns: ['id'],
-      onDelete: ForeignKeyAction.cascade,
-      entity: CatalogEntity),
-  ForeignKey(childColumns: ['rssId'], parentColumns: ['id'], entity: RssEntity,onDelete: ForeignKeyAction.cascade)
-])
+@Entity(tableName: 'rss2catalog')
 @JsonSerializable()
 class Rss2CatalogEntity {
   @PrimaryKey(autoGenerate: true)

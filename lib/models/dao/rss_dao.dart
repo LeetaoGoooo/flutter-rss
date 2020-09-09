@@ -23,6 +23,9 @@ abstract class RssDao {
   @Query('SELECT * from multi_rss WHERE rssId = :rssId')
   Future<List<MultiRssEntity>> findMultiRssByRssId(int rssId);
 
+  @update
+  Future<int> updateRss(RssEntity rssEntity);
+
   @insert
   Future<int> insertRss(RssEntity rssEntity);
 

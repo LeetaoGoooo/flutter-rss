@@ -4,6 +4,7 @@
 /// author      : Leetao
 
 import 'dart:convert';
+import 'package:floor/floor.dart';
 import 'package:intl/intl.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/feeds_dao.dart';
@@ -11,6 +12,7 @@ import 'package:rss/models/dao/rss2catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/feeds_entity.dart';
+import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/tools/feedParser.dart';
@@ -32,6 +34,7 @@ class FeedService {
   Future<List<FeedsEntity>> getFeeds(CatalogEntity catalog) async {
     currentCatalog = catalog;
     if (catalog.id == -1) {
+      await getAllRemoteFeeds();
       return await getLocalAllFeeds();
     } else {
       List<MultiRssEntity> multiRssList =
@@ -115,12 +118,12 @@ class FeedService {
     final SharedPreferences prefs = await _prefs;
     List<String> _allFeedStringList = [];
     List<FeedsEntity> _allFeedList = [];
-    List<MultiRssEntity> multiRssList = await rssDao.findAllMultiRss();
-    for (MultiRssEntity multiRssEntity in multiRssList) {
-      await _buildFeeds(multiRssEntity);
-      _allFeedStringList +=
-          prefs.getStringList(multiRssEntity.rssId.toString());
+    List<RssEntity> rssList = await rssDao.findAllRss();
+    
+    for(RssEntity rss in rssList) {
+        _allFeedStringList += prefs.getStringList(rss.id.toString());
     }
+
     if (_allFeedStringList != null) {
       _allFeedStringList.forEach((element) {
         Map _feedMap = jsonDecode(element);
@@ -135,16 +138,32 @@ class FeedService {
 
   /// 从远端获取数据
   getAllRemoteFeeds() async {
+    List<RssEntity> rssList = await rssDao.findAllRss();
+    print("rssList length:${rssList.length}");
     List<MultiRssEntity> multiRssList = await rssDao.findAllMultiRss();
     for (MultiRssEntity multiRssEntity in multiRssList) {
+      RssEntity rssEntity = RssEntity(
+          multiRssEntity.rssId,
+          multiRssEntity.rssTitle,
+          multiRssEntity.rssUrl,
+          multiRssEntity.rssType);
+      rssList.remove(rssEntity);
       await _buildFeeds(multiRssEntity);
     }
+    print("rssList without catalog length:${rssList.length}");
+    for(RssEntity rssItem in rssList) {
+      MultiRssEntity multiRssEntity = new MultiRssEntity(-1, rssItem.id, rssItem.type, rssItem.url, rssItem.title);
+      await _buildFeeds(multiRssEntity);
+    }
+
   }
 
   _buildFeeds(MultiRssEntity multiRssEntity) async {
     final SharedPreferences prefs = await _prefs;
     // 判断 shared 是否存在，不存在则去更新，否则使用 shared 内容
-    if (!prefs.containsKey(multiRssEntity.rssId.toString())) {
+    print("contains:${prefs.containsKey(multiRssEntity.rssId.toString())}");
+    if (!prefs.containsKey(multiRssEntity.rssId.toString()) ||
+        prefs.getStringList(multiRssEntity.rssId.toString()).length == 0) {
       // 通过 status 去区分某个 feeds 是否处于过滤当中
       try {
         if (multiRssEntity.rssType == 'rss') {
@@ -284,16 +303,28 @@ class FeedService {
     int unread = 0;
     _rssFeedStringList.forEach((element) {
       Map _feedMap = jsonDecode(element);
-      if(_feedMap['status'] == 1) {
-          read +=1;
-      }else {
-          unread +=1;
+      if (_feedMap['status'] == 1) {
+        read += 1;
+      } else {
+        unread += 1;
       }
     });
-    return {
-      "all":all,
-      "read":read,
-      "unread":unread
-    };
+
+    return {"all": all, "read": read, "unread": unread};
+  }
+
+  /// 取消订阅
+  /// 删除 rss 表中对应的记录
+  /// 删除 rss2catalog 表中对应的记录
+  /// 清理 SharedPreferences 中的数据
+  @transaction
+  Future<void> unsubcribeRss(int rssId) async {
+    RssEntity rssEntity = await rssDao.findRssById(rssId);
+    Rss2CatalogEntity rss2catalogEntity =
+        await rss2catalogDao.findCatalogByRssId(rssId);
+    await rss2catalogDao.deleteRss2Catalog(rss2catalogEntity);
+    await rssDao.deleteRss(rssEntity);
+    final SharedPreferences prefs = await _prefs;
+    await prefs.remove(rssId.toString());
   }
 }

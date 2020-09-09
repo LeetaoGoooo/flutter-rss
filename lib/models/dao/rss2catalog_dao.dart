@@ -20,6 +20,9 @@ abstract class Rss2CatalogDao {
   @insert
   Future<int> insertRss2Catalog(Rss2CatalogEntity rss2CatalogEntityList);
 
+  @update
+  Future<int> updateRss2Catalog(Rss2CatalogEntity rss2catalogEntity);
+
   @delete
   Future<void> deleteRss2Catalog(Rss2CatalogEntity rss2CatalogEntity);
 }

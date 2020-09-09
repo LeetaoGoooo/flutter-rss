@@ -1,17 +1,9 @@
 import 'package:floor/floor.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rss/models/entity/catalog_entity.dart';
-import 'package:rss/models/entity/rss_entity.dart';
 
 part 'feeds_entity.g.dart';
 
-@Entity(tableName: 'feeds', foreignKeys: [
-  ForeignKey(
-      childColumns: ['catalogId'],
-      parentColumns: ['id'],
-      entity: CatalogEntity),
-  ForeignKey(childColumns: ['rssId'], parentColumns: ['id'], entity: RssEntity)
-])
+@Entity(tableName: 'feeds')
 @JsonSerializable()
 class FeedsEntity {
   @PrimaryKey(autoGenerate: true)
