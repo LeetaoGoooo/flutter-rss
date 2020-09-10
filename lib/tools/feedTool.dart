@@ -19,9 +19,12 @@ class FeedTool {
     List<String> _rssFeedStringList =
         prefs.getStringList(feeds.rssId.toString());
     int index = -1;
+    if(_rssFeedStringList == null){
+      return;
+    }
 
     // todo 优化
-    int rssLength = _rssFeedStringList.length;
+    int rssLength = _rssFeedStringList?.length;
     for (int i = 0; i < rssLength; i++) {
       String element = _rssFeedStringList[i];
         Map _feedMap = jsonDecode(element);

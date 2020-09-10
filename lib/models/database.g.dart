@@ -133,6 +133,12 @@ class _$CatalogDao extends CatalogDao {
             'catalogs',
             (CatalogEntity item) =>
                 <String, dynamic>{'id': item.id, 'catalog': item.catalog}),
+        _catalogEntityUpdateAdapter = UpdateAdapter(
+            database,
+            'catalogs',
+            ['id'],
+            (CatalogEntity item) =>
+                <String, dynamic>{'id': item.id, 'catalog': item.catalog}),
         _catalogEntityDeletionAdapter = DeletionAdapter(
             database,
             'catalogs',
@@ -150,6 +156,8 @@ class _$CatalogDao extends CatalogDao {
       CatalogEntity(row['id'] as int, row['catalog'] as String);
 
   final InsertionAdapter<CatalogEntity> _catalogEntityInsertionAdapter;
+
+  final UpdateAdapter<CatalogEntity> _catalogEntityUpdateAdapter;
 
   final DeletionAdapter<CatalogEntity> _catalogEntityDeletionAdapter;
 
@@ -175,6 +183,12 @@ class _$CatalogDao extends CatalogDao {
   Future<int> insertCatalog(CatalogEntity catalogEntity) {
     return _catalogEntityInsertionAdapter.insertAndReturnId(
         catalogEntity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<int> updateCatlog(CatalogEntity catalog) {
+    return _catalogEntityUpdateAdapter.updateAndReturnChangedRows(
+        catalog, OnConflictStrategy.abort);
   }
 
   @override

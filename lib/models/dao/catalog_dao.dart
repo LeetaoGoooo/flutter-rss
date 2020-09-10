@@ -13,6 +13,9 @@ abstract class CatalogDao {
   @Query('SELECT * FROM catalogs WHERE catalog = :catalog')
   Future<CatalogEntity> findCatalogByCatalog(String catalog);
 
+  @update
+  Future<int> updateCatlog(CatalogEntity catalog);
+
   @delete
   Future<void> deleteCatalog(CatalogEntity  catalogEntity);
 

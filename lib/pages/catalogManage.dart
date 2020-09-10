@@ -14,6 +14,7 @@ import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:http/http.dart' as http;
+import 'package:rss/pages/catalogSetting.dart';
 import 'package:rss/service/feedService.dart';
 
 class CatalogManage extends StatefulWidget {
@@ -42,15 +43,21 @@ class CatalogManageStateWidget extends State<CatalogManage> {
     List<MultiRssEntity> _multiRssList = await rssDao.findAllMultiRss();
     List<String> _webSiteUrl = [];
     List<String> _rssIdList = [];
+    List<String> _tmpCatalog = [];
 
     for (MultiRssEntity multiRssEntity in _multiRssList) {
       _webSiteUrl.add(multiRssEntity.rssUrl);
       _rssIdList.add(multiRssEntity.rssId.toString());
       var _catalog = await catalogDao.findCatalogById(multiRssEntity.catalogId);
-      _catalogList.add(_catalog?.catalog);
+      _tmpCatalog.add(_catalog?.catalog);
     }
-    _avatars = await _getAllWebSiteIcon(_webSiteUrl);
-    _rssMap = await _getRssReadMap(_rssIdList);
+    List<Widget> _tmpAvatars = await _getAllWebSiteIcon(_webSiteUrl);
+    Map _tmpRssMap = await _getRssReadMap(_rssIdList);
+    setState(() {
+      _catalogList = _tmpCatalog;
+      _avatars = _tmpAvatars;
+      _rssMap = _tmpRssMap;
+    });
     print("mutiRssList length:${_multiRssList.length}");
     return _multiRssList;
   }
@@ -65,9 +72,14 @@ class CatalogManageStateWidget extends State<CatalogManage> {
         backgroundColorStart: Colors.deepPurple,
         backgroundColorEnd: Colors.purple,
         actions: [
-          IconButton(icon: Icon(Icons.add), onPressed: (){
-            print("add new catalog");
-          })
+          IconButton(
+              icon: Icon(Icons.settings),
+              onPressed: () {
+                    Navigator.of(context)
+                        .push(new MaterialPageRoute(builder: (_) {
+                      return new CatalogSetting();
+                    }));
+              })
         ],
       ),
       body: FutureBuilder<List<MultiRssEntity>>(
@@ -175,9 +187,10 @@ class CatalogManageStateWidget extends State<CatalogManage> {
     }
   }
 
-  Future<List<MultiRssEntity>> refresh() {
+  Future<void> refresh() {
     setState(() {
       multiRssList = getAllMultiRssEntity();
     });
+    return multiRssList;
   }
 }

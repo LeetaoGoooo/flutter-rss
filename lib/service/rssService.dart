@@ -52,11 +52,11 @@ class RssService {
   }
 
   @transaction
-  Future<void> updateRss(int rssId,String title,String url, int catalogId) async {
+  Future<int> updateRss(int rssId,String title,String url, int catalogId) async {
     Rss2CatalogEntity rss2catalogEntity = await rss2catalogDao.findCatalogByRssId(rssId);
     Rss2CatalogEntity rss2catalogUpdate = Rss2CatalogEntity(rss2catalogEntity.id, catalogId, rssId);
     await rss2catalogDao.updateRss2Catalog(rss2catalogUpdate);
     RssEntity rssEntity = await rssDao.findRssById(rssId);
-    await rssDao.updateRss(RssEntity(rssId,title,url,rssEntity.type));
+    return await rssDao.updateRss(RssEntity(rssId,title,url,rssEntity.type));
   }
 }

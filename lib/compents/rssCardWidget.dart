@@ -308,7 +308,8 @@ class RssCardStateWidget extends State<RssCard> {
               catalog: subTitle,
               catalogId: catalogId,
               rssId: rssId,
-              url: url);
+              url: url,
+              voidCallback: voidCallback);
         },
         fullscreenDialog: true));
   }

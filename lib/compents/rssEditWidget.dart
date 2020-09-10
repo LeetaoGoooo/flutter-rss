@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
-import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/service/rssService.dart';
 import 'package:rss/tools/feedParser.dart';
 import 'package:rss/constants/globals.dart' as g;
@@ -14,6 +14,7 @@ class RssEditDialog extends StatefulWidget {
   final int catalogId;
   final int rssId;
   final String url;
+  final AsyncCallback voidCallback;
 
   const RssEditDialog(
       {Key key,
@@ -22,12 +23,12 @@ class RssEditDialog extends StatefulWidget {
       this.catalog,
       this.catalogId,
       this.rssId,
-      this.url})
+      this.url, this.voidCallback})
       : super(key: key);
 
   @override
   RssEditDialogState createState() =>
-      new RssEditDialogState(avatar, title, catalog, catalogId, rssId, url);
+      new RssEditDialogState(avatar, title, catalog, catalogId, rssId, url, voidCallback);
 }
 
 class RssEditDialogState extends State<RssEditDialog> {
@@ -37,7 +38,9 @@ class RssEditDialogState extends State<RssEditDialog> {
   final int catalogId;
   final int rssId;
   final String url;
+  final AsyncCallback voidCallback;
   final _formKey = GlobalKey<FormState>();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   String _urlErrorText;
   String _nameErrorText;
   TextEditingController _urlController = new TextEditingController();
@@ -46,7 +49,7 @@ class RssEditDialogState extends State<RssEditDialog> {
   int _currentSelectCatalogId;
 
   RssEditDialogState(this.avatar, this.title, this.catalog, this.catalogId,
-      this.rssId, this.url);
+      this.rssId, this.url, this.voidCallback);
 
   @override
   void initState() {
@@ -54,6 +57,7 @@ class RssEditDialogState extends State<RssEditDialog> {
     setState(() {
       _urlController.value = TextEditingValue(text: url);
       _nameController.value = TextEditingValue(text: title);
+      _currentSelectCatalogId = catalogId;
     });
   }
 
@@ -66,6 +70,7 @@ class RssEditDialogState extends State<RssEditDialog> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
+      key: _scaffoldKey,
       appBar: new AppBar(
         title: Text(title),
         actions: [
@@ -125,7 +130,7 @@ class RssEditDialogState extends State<RssEditDialog> {
                                 snap.connectionState == ConnectionState.done) {
                               List<CatalogEntity> catalogs = snap.data;
                               return DropdownButtonFormField<int>(
-                                value: catalogId,
+                                value: _currentSelectCatalogId,
                                 decoration: InputDecoration(
                                     labelText: "Catalog",
                                     border: OutlineInputBorder(
@@ -161,8 +166,8 @@ class RssEditDialogState extends State<RssEditDialog> {
                         onPressed:
                             (_urlErrorText != null || _nameErrorText != null)
                                 ? null
-                                : () {
-                                    _save();
+                                : () async {
+                                   await _save();
                                   }),
                   )
                 ],
@@ -202,7 +207,7 @@ class RssEditDialogState extends State<RssEditDialog> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     var _url = _urlController.value.text.trim();
     var _name = _nameController.value.text.trim();
     var _rssId = rssId;
@@ -210,6 +215,11 @@ class RssEditDialogState extends State<RssEditDialog> {
         _currentSelectCatalogId == null ? -1 : _currentSelectCatalogId;
     print("url:$_url,name:$_name,rssId:$_rssId,catalog:$_catalogId");
     RssService rssService = new RssService();
-    rssService.updateRss(_rssId, _name, _url, _catalogId);
+    await rssService.updateRss(_rssId, _name, _url, _catalogId).then((value) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text("Update Success")));
+    }).catchError((e){
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text("Update Failed")));
+    });
+    widget.voidCallback();
   }
 }
