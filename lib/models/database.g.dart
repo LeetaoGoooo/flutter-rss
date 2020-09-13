@@ -267,8 +267,8 @@ class _$RssDao extends RssDao {
   }
 
   @override
-  Future<List<RssEntity>> findRssByUrl(String url) async {
-    return _queryAdapter.queryList('SELECT * FROM rss WHERE url = ?',
+  Future<RssEntity> findRssByUrl(String url) async {
+    return _queryAdapter.query('SELECT * FROM rss WHERE url = ?',
         arguments: <dynamic>[url], mapper: _rssMapper);
   }
 
@@ -296,6 +296,12 @@ class _$RssDao extends RssDao {
   Future<int> insertRss(RssEntity rssEntity) {
     return _rssEntityInsertionAdapter.insertAndReturnId(
         rssEntity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<List<int>> insertRssList(List<RssEntity> rssEntityList) {
+    return _rssEntityInsertionAdapter.insertListAndReturnIds(
+        rssEntityList, OnConflictStrategy.abort);
   }
 
   @override

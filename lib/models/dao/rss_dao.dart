@@ -12,7 +12,7 @@ abstract class RssDao {
   Future<RssEntity> findRssById(int id);
 
   @Query("SELECT * FROM rss WHERE url = :url")
-  Future<List<RssEntity>> findRssByUrl(String url);
+  Future<RssEntity> findRssByUrl(String url);
 
   @Query('SELECT * from multi_rss WHERE catalogId = :catalogId')
   Future<List<MultiRssEntity>> findMultiRssByCatalogId(int catalogId);
@@ -28,6 +28,9 @@ abstract class RssDao {
 
   @insert
   Future<int> insertRss(RssEntity rssEntity);
+
+  @insert
+  Future<List<int>> insertRssList(List<RssEntity> rssEntityList);
 
   @delete
   Future<void> deleteRss(RssEntity rssEntity);

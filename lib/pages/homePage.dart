@@ -238,8 +238,8 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                         if (url.isNotEmpty) {
                           await rssDao
                               .findRssByUrl(url)
-                              .then((List<RssEntity> value) {
-                            if (value.length > 0) {
+                              .then((RssEntity value) {
+                            if (value != null) {
                               setState(() {
                                 _urlValidate = false;
                                 _feedUrlHintMsg = 'This url already existed!';

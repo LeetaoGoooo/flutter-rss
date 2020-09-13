@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 /// file        : tabService.dart
 /// descrption  :
 /// date        : 2020/09/04 12:10:15
@@ -7,7 +9,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:floor/floor.dart';
 import 'package:intl/intl.dart';
-import 'package:opmlparser/opmlparser.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/feeds_dao.dart';
 import 'package:rss/models/dao/rss2catalog_dao.dart';
@@ -17,6 +18,7 @@ import 'package:rss/models/entity/feeds_entity.dart';
 import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/models/entity/rss_entity.dart';
+import 'package:rss/third/opmlparser/lib/opmlparser.dart';
 import 'package:rss/tools/feedParser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rss/constants/globals.dart' as g;
@@ -171,7 +173,14 @@ class FeedService {
         prefs.getStringList(multiRssEntity.rssId.toString()).length == 0) {
       // 通过 status 去区分某个 feeds 是否处于过滤当中
       try {
-        if (multiRssEntity.rssType == 'rss') {
+        if(multiRssEntity.rssType == null) {
+            try{
+              await _buildFeedByRss(multiRssEntity);
+            }catch(e){
+              await _buildFeedByAtom(multiRssEntity);
+            }
+        }
+        else if (multiRssEntity.rssType == 'rss') {
           await _buildFeedByRss(multiRssEntity);
         } else {
           await _buildFeedByAtom(multiRssEntity);
@@ -348,7 +357,65 @@ class FeedService {
   Future<void> parseOPML(File file) async {
     var opmlStr = await file.readAsString();
     Opml opml = Opml.parse(opmlStr);
-    print(opml.title);
-    print(opml.items.first);
+
+    List<OpmlItem> opmlItemList = opml.items;
+  
+    var map = new HashMap();
+
+    opmlItemList.forEach((element) {
+      if (element.parentTitle == null) {
+        if (element.xmlUrl == null) {
+          map.putIfAbsent(element.title, () => List<OpmlItem>());
+        } else {
+          map.putIfAbsent("All", () => List<OpmlItem>());
+          map["All"].add(element);
+        }
+      } else {
+        map.putIfAbsent(element.parentTitle, () => List<OpmlItem>());
+        map[element.parentTitle].add(element);
+      }
+    });
+
+    var keys = map.keys;
+
+    for (var key in keys) {
+      print("import $key");
+      await insertRssList(map[key], key);
+    }
+
+    print("import finish");
+  }
+
+  @transaction
+  Future<void> insertRssList(List<OpmlItem> items, String catalog) async {
+    List<OpmlItem>opmlItems = items;
+    var opmlLen = opmlItems.length;
+    List<RssEntity> rssList = [];
+
+    for (var i = 0; i < opmlLen; i++) {
+      var rssQuery = await rssDao.findRssByUrl(opmlItems[i].xmlUrl);
+      if (rssQuery == null) {
+        print("rss ${opmlItems[i].title} not exist");
+        rssList.add(
+            RssEntity(null, opmlItems[i].title, opmlItems[i].xmlUrl, null));
+      }
+    }
+    List<int> rssIdList = await rssDao.insertRssList(rssList);
+
+    if (catalog != "All") {
+      var catalogQuery = await catalogDao.findCatalogByCatalog(catalog);
+      var catalogId;
+      if (catalogQuery == null) {
+        catalogId =
+            await catalogDao.insertCatalog(CatalogEntity(null, catalog));
+      } else {
+        catalogId = catalogQuery.id;
+      }
+      List<Rss2CatalogEntity> rss2catalogList = [];
+      rssIdList.forEach((rssId) {
+        rss2catalogList.add(Rss2CatalogEntity(null, rssId, catalogId));
+      });
+      await rss2catalogDao.insertRss2CatalogList(rss2catalogList);
+    }
   }
 }
