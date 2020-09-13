@@ -7,7 +7,6 @@ import 'dart:collection';
 /// author      : Leetao
 
 import 'package:flutter/material.dart';
-import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:rss/compents/rssCardWidget.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
@@ -41,6 +40,7 @@ class CatalogManageStateWidget extends State<CatalogManage> {
   Future<List<MultiRssEntity>> getAllMultiRssEntity() async {
     print("getAllMultiRssEntity");
     List<MultiRssEntity> _multiRssList = await rssDao.findAllMultiRss();
+    print("get $_multiRssList");
     List<String> _webSiteUrl = [];
     List<String> _rssIdList = [];
     List<String> _tmpCatalog = [];
@@ -51,14 +51,16 @@ class CatalogManageStateWidget extends State<CatalogManage> {
       var _catalog = await catalogDao.findCatalogById(multiRssEntity.catalogId);
       _tmpCatalog.add(_catalog?.catalog);
     }
+    print(_webSiteUrl);
     List<Widget> _tmpAvatars = await _getAllWebSiteIcon(_webSiteUrl);
+        print("_getRssReadMap");
     Map _tmpRssMap = await _getRssReadMap(_rssIdList);
     setState(() {
       _catalogList = _tmpCatalog;
       _avatars = _tmpAvatars;
       _rssMap = _tmpRssMap;
     });
-    print("mutiRssList length:${_multiRssList.length}");
+    // print("mutiRssList length:${_multiRssList?.length}");
     return _multiRssList;
   }
 
@@ -66,19 +68,23 @@ class CatalogManageStateWidget extends State<CatalogManage> {
   Widget build(BuildContext context) {
     print("build...");
     return Scaffold(
-      appBar: GradientAppBar(
+      appBar: AppBar(
         title: Text("CatalogManage"),
-        // elevation: 0,
-        backgroundColorStart: Colors.deepPurple,
-        backgroundColorEnd: Colors.purple,
+        leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              // color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, "/");
+            }),
         actions: [
           IconButton(
               icon: Icon(Icons.settings),
               onPressed: () {
-                    Navigator.of(context)
-                        .push(new MaterialPageRoute(builder: (_) {
-                      return new CatalogSetting();
-                    }));
+                Navigator.of(context).push(new MaterialPageRoute(builder: (_) {
+                  return new CatalogSetting();
+                }));
               })
         ],
       ),
@@ -143,6 +149,7 @@ class CatalogManageStateWidget extends State<CatalogManage> {
   }
 
   Future<Map> _getRssReadMap(List<String> rssIdList) async {
+    print("rssIdList :$rssIdList");
     int rssLen = rssIdList.length;
     var _map = HashMap();
     for (var i = 0; i < rssLen; i++) {

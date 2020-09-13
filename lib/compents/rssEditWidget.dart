@@ -70,6 +70,7 @@ class RssEditDialogState extends State<RssEditDialog> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
+      resizeToAvoidBottomInset: false,
       key: _scaffoldKey,
       appBar: new AppBar(
         title: Text(title),
@@ -87,6 +88,7 @@ class RssEditDialogState extends State<RssEditDialog> {
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -161,7 +163,7 @@ class RssEditDialogState extends State<RssEditDialog> {
                         progressWidget: const CircularProgressIndicator(
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white)),
-                        color: Colors.deepPurple,
+                        color: Theme.of(context).accentColor,
                         width: 110,
                         onPressed:
                             (_urlErrorText != null || _nameErrorText != null)

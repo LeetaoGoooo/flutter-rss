@@ -58,7 +58,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   final FeedsDao feedsDao = g.feedsDao;
   FontSize defaultFontSize = FontSize(14);
   double defaultFontSizeValue = 14;
-  Color _bookmarkColor = Colors.white;
+  Color _bookmarkColor;
 
   ArticleHeroWidgetState(
     this.link,
@@ -74,6 +74,9 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   @override
   void initState() {
     super.initState();
+    setState(() {
+      _bookmarkColor = Theme.of(context).iconTheme.color;
+    });
     loadContent();
     _isMarked();
   }
@@ -97,7 +100,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
           IconButton(
               icon: Icon(
                 Icons.share,
-                color: Colors.white,
+                // color: Colors.white,
               ),
               onPressed: () {
                 final RenderBox box = context.findRenderObject();
@@ -108,7 +111,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.purple,
+        color: Theme.of(context).bottomAppBarColor,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -123,7 +126,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   Icons.zoom_in,
-                  color: Colors.white,
+                  // color: Colors.white,
                 ),
                 onPressed: () {
                   setState(() {
@@ -134,7 +137,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   Icons.zoom_out,
-                  color: Colors.white,
+                  // color: Colors.white,
                 ),
                 onPressed: () {
                   setState(() {
@@ -172,7 +175,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
                       ),
                       Text(
                         '$author  $pubDate',
-                        style: TextStyle(color: Colors.black.withOpacity(0.6)),
+                        style: TextStyle(color: Theme.of(context).textTheme.subtitle2.color),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -193,7 +196,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         FeedsEntity feedsEntity = value.first;
         setState(() {
           _feedId = feedsEntity.id;
-          _bookmarkColor = Colors.yellow;
+          _bookmarkColor = Theme.of(context).accentColor;
         });
       }
     });
@@ -202,10 +205,10 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   _markBookMark() {
     setState(() {
       _bookmarkColor =
-          _bookmarkColor == Colors.white ? Colors.yellow : Colors.white;
+          _bookmarkColor == Theme.of(context).iconTheme.color ? Theme.of(context).accentColor : Theme.of(context).iconTheme.color;
     });
     String _message = "Removed From Favorites";
-    if (_bookmarkColor == Colors.yellow) {
+    if (_bookmarkColor == Theme.of(context).accentColor) {
       _message = "Marked as favorite";
       feedService
           .addFeedToFavorite(FeedsEntity(

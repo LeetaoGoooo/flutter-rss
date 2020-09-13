@@ -33,7 +33,6 @@ dependencies:
   floor: ^0.14.0
   intl: ^0.16.1
   html: ^0.14.0+3
-  gradient_app_bar: ^0.0.1
   flutter_html: ^1.0.0
   share: ^0.6.5
   cached_network_image: ^2.3.1
@@ -42,6 +41,8 @@ dependencies:
   json_annotation: ^3.0.1
   tuple: ^1.0.3
   event_bus: ^1.1.0
+  opmlparser: ^0.0.1
+  flustars: ^0.3.2
   
 dev_dependencies:
   flutter_test:

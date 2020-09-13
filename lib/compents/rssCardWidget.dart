@@ -94,7 +94,7 @@ class RssCardStateWidget extends State<RssCard> {
                       height: 320.0,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(15.0),
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black26,
@@ -123,7 +123,10 @@ class RssCardStateWidget extends State<RssCard> {
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 8.0,
-                                    color: Colors.lightBlueAccent),
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .subtitle1
+                                        .color),
                               ),
                               SizedBox(
                                 height: 20.0,
@@ -141,15 +144,20 @@ class RssCardStateWidget extends State<RssCard> {
                                           'ALL',
                                           style: TextStyle(
                                             fontSize: 10.0,
-                                            color: Colors.black54,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .subtitle2
+                                                .color,
                                           ),
                                         ),
                                         Text(
                                           all.toString(),
                                           style: TextStyle(
                                               fontSize: 14.0,
-                                              color: Colors.black87,
-                                              fontFamily: ''),
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .subtitle1
+                                                  .color),
                                         ),
                                       ],
                                     ),
@@ -158,15 +166,22 @@ class RssCardStateWidget extends State<RssCard> {
                                         Text(
                                           'READED',
                                           style: TextStyle(
-                                              fontSize: 10.0,
-                                              color: Colors.black54),
+                                            fontSize: 10.0,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .subtitle2
+                                                .color,
+                                          ),
                                         ),
                                         Text(
                                           read.toString(),
                                           style: TextStyle(
-                                              fontSize: 14.0,
-                                              color: Colors.black87,
-                                              fontFamily: ''),
+                                            fontSize: 14.0,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .subtitle1
+                                                .color,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -175,15 +190,22 @@ class RssCardStateWidget extends State<RssCard> {
                                         Text(
                                           "UNREAD",
                                           style: TextStyle(
-                                              fontSize: 10.0,
-                                              color: Colors.black54),
+                                            fontSize: 10.0,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .subtitle2
+                                                .color,
+                                          ),
                                         ),
                                         Text(
                                           unread.toString(),
                                           style: TextStyle(
-                                              fontSize: 14.0,
-                                              color: Colors.black87,
-                                              fontFamily: ''),
+                                            fontSize: 14.0,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .subtitle1
+                                                .color,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -201,7 +223,7 @@ class RssCardStateWidget extends State<RssCard> {
                     height: circleRadius,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.background,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black26,

@@ -4,7 +4,6 @@
 /// author      : Leetao
 
 import 'package:flutter/material.dart';
-import 'package:gradient_app_bar/gradient_app_bar.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/models/entity/catalog_entity.dart';
@@ -34,11 +33,11 @@ class CatalogSettingState extends State<CatalogSetting> {
     print("build...");
     return Scaffold(
       key: _scaffoldKey,
-      appBar: GradientAppBar(
+      appBar: AppBar(
         title: Text("CatalogSettings"),
-        // elevation: 0,
-        backgroundColorStart: Colors.deepPurple,
-        backgroundColorEnd: Colors.purple,
+        // // elevation: 0,
+        // backgroundColorStart: Colors.deepPurple,
+        // backgroundColorEnd: Colors.purple,
         actions: [
           IconButton(
               icon: Icon(Icons.add),

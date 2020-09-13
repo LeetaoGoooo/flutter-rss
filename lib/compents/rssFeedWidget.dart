@@ -27,7 +27,11 @@ class RssFeedListTile extends StatefulWidget {
       this.publishDate,
       this.author,
       this.content,
-      this.link, this.catalogId, this.tab, this.status, this.rssId})
+      this.link,
+      this.catalogId,
+      this.tab,
+      this.status,
+      this.rssId})
       : assert(title != null),
         assert(subTitle != null),
         assert(publishDate != null),
@@ -38,7 +42,8 @@ class RssFeedListTile extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return RssFeedLisTileState(coverUrl, title, subTitle, publishDate, author, content, link, catalogId, tab,status,rssId);
+    return RssFeedLisTileState(coverUrl, title, subTitle, publishDate, author,
+        content, link, catalogId, tab, status, rssId);
   }
 }
 
@@ -56,9 +61,18 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
   final String tab;
   final FeedTool feedTool = new FeedTool();
 
-
-  RssFeedLisTileState(this.coverUrl, this.title, this.subTitle,
-      this.publishDate, this.author, this.content, this.link, this.catalogId, this.tab, this.status, this.rssId);
+  RssFeedLisTileState(
+      this.coverUrl,
+      this.title,
+      this.subTitle,
+      this.publishDate,
+      this.author,
+      this.content,
+      this.link,
+      this.catalogId,
+      this.tab,
+      this.status,
+      this.rssId);
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +81,8 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
         setState(() {
           status = 1;
         });
-        await feedTool.makeFeedRead(new FeedsEntity(null, title, link, author, publishDate, content, catalogId, rssId, status));
+        await feedTool.makeFeedRead(new FeedsEntity(null, title, link, author,
+            publishDate, content, catalogId, rssId, status));
         print("status $status");
         Navigator.push(context, MaterialPageRoute(builder: (_) {
           return ArticleHeroWidget(
@@ -136,7 +151,11 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                   child: Column(children: <Widget>[
                     Text(
                       title,
-                      style: TextStyle(color: status == 1 ? Colors.grey : Colors.black,fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: status == 1
+                              ? Theme.of(context).disabledColor
+                              : Theme.of(context).textTheme.headline6.color,
+                          fontWeight: FontWeight.bold),
                     ),
                     Text(
                       subTitle,
@@ -170,7 +189,11 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           title,
-                          style: TextStyle(color: status == 1 ? Colors.grey : Colors.black,fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: status == 1
+                                  ? Theme.of(context).disabledColor
+                                  : Theme.of(context).textTheme.headline6.color,
+                              fontWeight: FontWeight.bold),
                         )),
                     Align(
                         alignment: Alignment.centerLeft,

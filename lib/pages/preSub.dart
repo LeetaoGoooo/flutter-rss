@@ -66,8 +66,8 @@ class _PreSubStatefulWidgetState extends State<PreSubPage> {
           SizedBox(
               width: double.infinity,
               child: FlatButton(
-                  color: Colors.white,
-                  textColor: Colors.blue,
+                  // color: Colors.white,
+                  // textColor: Colors.blue,
                   onPressed: () {
                     Navigator.of(context)
                         .push(new MaterialPageRoute(builder: (_) {
@@ -79,8 +79,8 @@ class _PreSubStatefulWidgetState extends State<PreSubPage> {
           SizedBox(
               width: double.infinity,
               child: FlatButton(
-                  color: Colors.white,
-                  textColor: Colors.blue,
+                  // color: Colors.white,
+                  // textColor: Colors.bl ue,
                   onPressed: () async {
                     await _subRss();
                   },

@@ -13,7 +13,7 @@ import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/models/entity/tab_entity.dart';
 import 'package:rss/service/tabService.dart';
-import 'package:rss/tools/globalEventBus.dart';
+// import 'package:rss/tools/globalEventBus.dart';
 
 class TabViewWidget extends StatefulWidget {
   final CatalogEntity catalog;
@@ -33,7 +33,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
   RssEntity selectedRss;
   Future<TabEntity> tab;
   bool showToTopBtn = false;
-  GlobalEventBus eventBus = new GlobalEventBus();
+  // GlobalEventBus eventBus = new GlobalEventBus();
 
   ScrollController _scrollController;
 
@@ -120,10 +120,16 @@ class TabViewWidgetState extends State<TabViewWidget> {
             List<FeedsEntity> _feedsList = _tabEntity.feeds;
             List<RssEntity> _rssEntityList = _tabEntity.rss;
             return RefreshIndicator(
+              
                 child: (_tabEntity.feeds.length > 0 &&
                         _tabEntity.rss.length > 0)
-                    ? Stack(children: <Widget>[
-                        Column(mainAxisSize: MainAxisSize.min, children: <
+                    ? Stack(
+                      
+                      children: <Widget>[
+
+                        Column(
+                          
+                          mainAxisSize: MainAxisSize.min, children: <
                             Widget>[
                           Expanded(
                               flex: 1,
@@ -149,20 +155,20 @@ class TabViewWidgetState extends State<TabViewWidget> {
                                                   ? null
                                                   : CircleAvatar(
                                                       backgroundColor:
-                                                          Colors.purple[300]),
+                                                          Theme.of(context).chipTheme.backgroundColor),
                                               selected: (selectedRss == null ||
                                                       selectedRss.id !=
                                                           rssEntity.id)
                                                   ? false
                                                   : true,
                                               label: Text(rssEntity.title),
-                                              selectedColor: Colors.purple[100],
+                                              selectedColor: Theme.of(context).chipTheme.selectedColor,
                                               selectedShadowColor:
                                                   Theme.of(context)
                                                       .chipTheme
                                                       .selectedShadowColor,
                                               deleteIcon: Icon(Icons.cancel,
-                                                  color: Colors.grey, size: 18),
+                                                  color: Theme.of(context).chipTheme.deleteIconColor, size: 18),
                                               onDeleted: () async {
                                                 await _unsubcribeDialog(
                                                     rssEntity);
@@ -301,9 +307,6 @@ class TabViewWidgetState extends State<TabViewWidget> {
             FlatButton(
               child: Text("Yes"),
               onPressed: () async {
-                /// TODO 完善取消订阅逻辑
-                /// 取消订阅时判断是否有其他非 -1 的 catalog
-                /// 没有则新增 catalog 为 -1 的 rss2catalogDao
                 Rss2CatalogEntity rss2catalogEntity =
                     await rss2catalogDao.findCatalogByRssId(rssEntity.id);
                 await rss2catalogDao.deleteRss2Catalog(rss2catalogEntity);

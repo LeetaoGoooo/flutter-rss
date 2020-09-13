@@ -4,8 +4,10 @@
 /// author      : Leetao
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:floor/floor.dart';
 import 'package:intl/intl.dart';
+import 'package:opmlparser/opmlparser.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/feeds_dao.dart';
 import 'package:rss/models/dao/rss2catalog_dao.dart';
@@ -35,6 +37,7 @@ class FeedService {
     currentCatalog = catalog;
     if (catalog.id == -1) {
       await getAllRemoteFeeds();
+      print("return local all feeds");
       return await getLocalAllFeeds();
     } else {
       List<MultiRssEntity> multiRssList =
@@ -119,9 +122,11 @@ class FeedService {
     List<String> _allFeedStringList = [];
     List<FeedsEntity> _allFeedList = [];
     List<RssEntity> rssList = await rssDao.findAllRss();
-    
-    for(RssEntity rss in rssList) {
+
+    for (RssEntity rss in rssList) {
+      if (prefs.containsKey(rss.id.toString())) {
         _allFeedStringList += prefs.getStringList(rss.id.toString());
+      }
     }
 
     if (_allFeedStringList != null) {
@@ -151,11 +156,11 @@ class FeedService {
       await _buildFeeds(multiRssEntity);
     }
     print("rssList without catalog length:${rssList.length}");
-    for(RssEntity rssItem in rssList) {
-      MultiRssEntity multiRssEntity = new MultiRssEntity(-1, rssItem.id, rssItem.type, rssItem.url, rssItem.title);
+    for (RssEntity rssItem in rssList) {
+      MultiRssEntity multiRssEntity = new MultiRssEntity(
+          -1, rssItem.id, rssItem.type, rssItem.url, rssItem.title);
       await _buildFeeds(multiRssEntity);
     }
-
   }
 
   _buildFeeds(MultiRssEntity multiRssEntity) async {
@@ -171,7 +176,9 @@ class FeedService {
         } else {
           await _buildFeedByAtom(multiRssEntity);
         }
-      } catch (e) {}
+      } catch (e) {
+        print("_buildFeeds" + e.toString());
+      }
     }
   }
 
@@ -297,6 +304,16 @@ class FeedService {
   /// 获取 feeds 的阅读情况
   Future<Map<String, int>> getFeedReadStatus(String rssId) async {
     final SharedPreferences prefs = await _prefs;
+    if (!prefs.containsKey(rssId)) {
+      List<MultiRssEntity> multiRssEntityList =
+          await rssDao.findMultiRssByRssId(int.parse(rssId));
+      for (MultiRssEntity multiRssEntity in multiRssEntityList) {
+        await _buildFeeds(multiRssEntity);
+      }
+      if (!prefs.containsKey(rssId)) {
+        return {"all": 0, "read": 0, "unread": 0};
+      }
+    }
     List<String> _rssFeedStringList = prefs.getStringList(rssId);
     int all = _rssFeedStringList.length;
     int read = 0;
@@ -326,5 +343,12 @@ class FeedService {
     await rssDao.deleteRss(rssEntity);
     final SharedPreferences prefs = await _prefs;
     await prefs.remove(rssId.toString());
+  }
+
+  Future<void> parseOPML(File file) async {
+    var opmlStr = await file.readAsString();
+    Opml opml = Opml.parse(opmlStr);
+    print(opml.title);
+    print(opml.items.first);
   }
 }
