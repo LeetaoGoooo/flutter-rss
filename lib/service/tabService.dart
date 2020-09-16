@@ -1,10 +1,12 @@
-import 'package:rss/constants/globals.dart';
+// import 'package:flutter/foundation.dart';
+import 'package:rss/events/tabviewRssEvent.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/feeds_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/models/entity/tab_entity.dart';
 import 'package:rss/service/feedService.dart';
 import 'package:rss/service/rssService.dart';
+import 'package:rss/tools/globalEventBus.dart';
 
 /// file        : tabService.dart
 /// descrption  :
@@ -14,22 +16,25 @@ import 'package:rss/service/rssService.dart';
 class TabService {
   final RssService rssService = new RssService();
   final FeedService feedService = new FeedService();
+  final GlobalEventBus eventBus = new GlobalEventBus();
 
-  Future<TabEntity> getTabs(CatalogEntity catalog,
+
+  getTabs(CatalogEntity catalog,
       {RssEntity rssEntity, bool selected, int status}) async {
     List<FeedsEntity> feeds = [];
     List<RssEntity> rss = await rssService.getRssList(catalog);
+    eventBus.event.fire(TabViewRssEvent(rssList: rss));
     print("rss length:${rss.length}");
     if (rssEntity == null && selected == null) {
-      feeds = await feedService.getFeeds(catalog);
+      await feedService.getFeeds(catalog);
     } else {
-      feeds = await feedService.selectRss(catalog, rssEntity, selected);
+      await feedService.selectRss(catalog, rssEntity, selected);
     }
     if (status != null) {
       print("filter....");
-      feeds = feedService.filterFeedsByStatus(feeds, status);
+      feedService.filterFeedsByStatus(feeds, status);
     }
-    return TabEntity(rss, feeds);
+    // return TabEntity(rss, feeds);
   }
 
   Future<TabEntity> getFavorites(CatalogEntity catalog, {int rssId}) async {

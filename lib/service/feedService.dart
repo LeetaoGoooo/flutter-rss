@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:floor/floor.dart';
 import 'package:intl/intl.dart';
+import 'package:rss/events/tabviewFeedEvent.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/feeds_dao.dart';
 import 'package:rss/models/dao/rss2catalog_dao.dart';
@@ -20,6 +21,7 @@ import 'package:rss/models/entity/rss_entities.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/third/opmlparser/lib/opmlparser.dart';
 import 'package:rss/tools/feedParser.dart';
+import 'package:rss/tools/globalEventBus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:webfeed/domain/atom_feed.dart';
@@ -30,6 +32,8 @@ class FeedService {
   final RssDao rssDao = g.rssDao;
   final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   final CatalogDao catalogDao = g.catalogDao;
+  final GlobalEventBus eventBus = new GlobalEventBus();
+
   CatalogEntity currentCatalog = new CatalogEntity(-1, "All");
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
@@ -39,15 +43,15 @@ class FeedService {
     currentCatalog = catalog;
     if (catalog.id == -1) {
       await getAllRemoteFeeds();
-      print("return local all feeds");
-      return await getLocalAllFeeds();
+      // print("return local all feeds");
+      // return await getLocalAllFeeds();
     } else {
       List<MultiRssEntity> multiRssList =
           await rssDao.findMultiRssByCatalogId(catalog.id);
       for (MultiRssEntity multiRssEntity in multiRssList) {
         await _buildFeeds(multiRssEntity);
       }
-      return await getFeedsByCatalog(catalog);
+      // return await getFeedsByCatalog(catalog);
     }
   }
 
@@ -173,14 +177,13 @@ class FeedService {
         prefs.getStringList(multiRssEntity.rssId.toString()).length == 0) {
       // 通过 status 去区分某个 feeds 是否处于过滤当中
       try {
-        if(multiRssEntity.rssType == null) {
-            try{
-              await _buildFeedByRss(multiRssEntity);
-            }catch(e){
-              await _buildFeedByAtom(multiRssEntity);
-            }
-        }
-        else if (multiRssEntity.rssType == 'rss') {
+        if (multiRssEntity.rssType == null) {
+          try {
+            await _buildFeedByRss(multiRssEntity);
+          } catch (e) {
+            await _buildFeedByAtom(multiRssEntity);
+          }
+        } else if (multiRssEntity.rssType == 'rss') {
           await _buildFeedByRss(multiRssEntity);
         } else {
           await _buildFeedByAtom(multiRssEntity);
@@ -262,6 +265,7 @@ class FeedService {
           0);
 
       if (!_rssFeedStringList.contains(jsonEncode(newFeed))) {
+        eventBus.event.fire(TabViewFeedEvent(newFeed));
         _rssFeedStringList.add(jsonEncode(newFeed));
       }
     });
@@ -359,7 +363,7 @@ class FeedService {
     Opml opml = Opml.parse(opmlStr);
 
     List<OpmlItem> opmlItemList = opml.items;
-  
+
     var map = new HashMap();
 
     opmlItemList.forEach((element) {
@@ -388,7 +392,7 @@ class FeedService {
 
   @transaction
   Future<void> insertRssList(List<OpmlItem> items, String catalog) async {
-    List<OpmlItem>opmlItems = items;
+    List<OpmlItem> opmlItems = items;
     var opmlLen = opmlItems.length;
     List<RssEntity> rssList = [];
 
@@ -411,9 +415,10 @@ class FeedService {
       } else {
         catalogId = catalogQuery.id;
       }
+      print("current catalog id:$catalogId catalog:$catalog");
       List<Rss2CatalogEntity> rss2catalogList = [];
       rssIdList.forEach((rssId) {
-        rss2catalogList.add(Rss2CatalogEntity(null, rssId, catalogId));
+        rss2catalogList.add(Rss2CatalogEntity(null, catalogId, rssId));
       });
       await rss2catalogDao.insertRss2CatalogList(rss2catalogList);
     }

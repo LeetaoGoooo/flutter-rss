@@ -40,6 +40,7 @@ class RssService {
         return rssList;
       }
       multiRssList.forEach((MultiRssEntity multiRssEntity) {
+        print(multiRssEntity.rssTitle);
         RssEntity rssItem = new RssEntity(
             multiRssEntity.rssId,
             multiRssEntity.rssTitle,

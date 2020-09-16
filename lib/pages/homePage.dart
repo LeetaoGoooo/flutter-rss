@@ -49,9 +49,16 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
     _tabKeys.add(_key);
     _tabViews.add(TabViewWidget(key: _key, catalog: _tabs[0]));
     _tabController = new TabController(length: _tabs.length, vsync: this);
-    _getAllCatalogs().then((value) {
+    loadTabController();
+  }
+
+  loadTabController() {
+     _getAllCatalogs().then((value) {
       List<Widget> _widgets = [];
       value.forEach((element) {
+        if(_tabs.indexOf(element) != -1) {
+          return;
+        }
         var _key = GlobalKey<TabViewWidgetState>();
         _tabKeys.add(_key);
         _widgets.add(TabViewWidget(key: _key, catalog: element));
@@ -317,7 +324,10 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                               type: FileType.custom,
                               allowedExtensions: ['opml']);
                           if (file != null) {
-                            await feedService.parseOPML(file);
+                            print("parse...");
+                            await feedService.parseOPML(file).then((value) => {
+                              loadTabController()
+                            });
                           }
                         },
                         child: Text("Import from OPML"),

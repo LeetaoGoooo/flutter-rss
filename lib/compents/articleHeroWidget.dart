@@ -74,6 +74,11 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     setState(() {
       _bookmarkColor = Theme.of(context).iconTheme.color;
     });
@@ -175,7 +180,8 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
                       ),
                       Text(
                         '$author  $pubDate',
-                        style: TextStyle(color: Theme.of(context).textTheme.subtitle2.color),
+                        style: TextStyle(
+                            color: Theme.of(context).textTheme.subtitle2.color),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -192,7 +198,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
 
   _isMarked() {
     feedsDao.findFeedsByPart(rssId, link).then((value) {
-      if(value.length > 0) {
+      if (value.length > 0) {
         FeedsEntity feedsEntity = value.first;
         setState(() {
           _feedId = feedsEntity.id;
@@ -204,8 +210,9 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
 
   _markBookMark() {
     setState(() {
-      _bookmarkColor =
-          _bookmarkColor == Theme.of(context).iconTheme.color ? Theme.of(context).accentColor : Theme.of(context).iconTheme.color;
+      _bookmarkColor = _bookmarkColor == Theme.of(context).iconTheme.color
+          ? Theme.of(context).accentColor
+          : Theme.of(context).iconTheme.color;
     });
     String _message = "Removed From Favorites";
     if (_bookmarkColor == Theme.of(context).accentColor) {
