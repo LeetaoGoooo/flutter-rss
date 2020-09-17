@@ -39,40 +39,45 @@ class FeedService {
 
   /// 根据 catalog 获取 feeds
   /// 支持 catalog.id 为 -1 的情况
-  Future<List<FeedsEntity>> getFeeds(CatalogEntity catalog) async {
+  Future<void> getFeeds(CatalogEntity catalog, {int status}) async {
     currentCatalog = catalog;
+    List<FeedsEntity> feeds = [];
     if (catalog.id == -1) {
-      await getAllRemoteFeeds();
-      // print("return local all feeds");
-      // return await getLocalAllFeeds();
+      getAllRemoteFeeds();
+      feeds = await getLocalAllFeeds();
     } else {
       List<MultiRssEntity> multiRssList =
           await rssDao.findMultiRssByCatalogId(catalog.id);
       for (MultiRssEntity multiRssEntity in multiRssList) {
-        await _buildFeeds(multiRssEntity);
+        _buildFeeds(multiRssEntity);
       }
-      // return await getFeedsByCatalog(catalog);
+      feeds = await getFeedsByCatalog(catalog);
     }
+    if (status != null) {
+      feeds = filterFeedsByStatus(feeds, status);
+    }
+    eventBus.event.fire(TabViewFeedEvent(feeds: feeds));
   }
 
   List<FeedsEntity> filterFeedsByStatus(List<FeedsEntity> feeds, int status) {
-    print("before filter:${feeds.length}");
     List<FeedsEntity> _filterFeeds = [];
     feeds.forEach((FeedsEntity element) {
       if (element.status == status) {
         _filterFeeds.add(element);
       }
     });
-    print("after filter:${_filterFeeds.length}");
     return _filterFeeds;
   }
 
   /// 选定指定的 rss 获取 feeds
   Future<List<FeedsEntity>> selectRss(
-      CatalogEntity catalog, RssEntity rssEntity, bool selected) async {
+      CatalogEntity catalog, RssEntity rssEntity, bool selected,
+      {int status}) async {
     currentCatalog = catalog;
     final SharedPreferences prefs = await _prefs;
     currentCatalog = catalog;
+    List<FeedsEntity> feeds = [];
+
     if (selected) {
       print("selected current catalog:${catalog.catalog}");
       List<FeedsEntity> _tmpFeedsList = [];
@@ -84,14 +89,15 @@ class FeedService {
         _tmpFeedsList.add(_feed);
       });
       _tmpFeedsList.sort((a, b) => a.published.compareTo(b.published));
-      return _tmpFeedsList;
+      feeds = _tmpFeedsList;
     } else {
       print("unselected current catalog:${catalog.catalog}");
       if (catalog.id == -1) {
-        return await getLocalAllFeeds();
+        feeds = await getLocalAllFeeds();
       }
-      return await getFeedsByCatalog(catalog);
+      feeds = await getFeedsByCatalog(catalog);
     }
+    eventBus.event.fire(TabViewFeedEvent(feeds: feeds));
   }
 
   /// 根据 catalog 获取 Feeds
@@ -173,24 +179,20 @@ class FeedService {
     final SharedPreferences prefs = await _prefs;
     // 判断 shared 是否存在，不存在则去更新，否则使用 shared 内容
     print("contains:${prefs.containsKey(multiRssEntity.rssId.toString())}");
-    if (!prefs.containsKey(multiRssEntity.rssId.toString()) ||
-        prefs.getStringList(multiRssEntity.rssId.toString()).length == 0) {
-      // 通过 status 去区分某个 feeds 是否处于过滤当中
-      try {
-        if (multiRssEntity.rssType == null) {
-          try {
-            await _buildFeedByRss(multiRssEntity);
-          } catch (e) {
-            await _buildFeedByAtom(multiRssEntity);
-          }
-        } else if (multiRssEntity.rssType == 'rss') {
+    try {
+      if (multiRssEntity.rssType == null) {
+        try {
           await _buildFeedByRss(multiRssEntity);
-        } else {
+        } catch (e) {
           await _buildFeedByAtom(multiRssEntity);
         }
-      } catch (e) {
-        print("_buildFeeds" + e.toString());
+      } else if (multiRssEntity.rssType == 'rss') {
+        await _buildFeedByRss(multiRssEntity);
+      } else {
+        await _buildFeedByAtom(multiRssEntity);
       }
+    } catch (e) {
+      print("_buildFeeds" + e.toString());
     }
   }
 
@@ -201,8 +203,16 @@ class FeedService {
     List<String> _rssFeedStringList =
         prefs.getStringList(multiRssEntity.rssId.toString());
 
+    List<FeedsEntity> _rssList = [];
     if (_rssFeedStringList == null) {
-      _rssFeedStringList = [];
+      _rssFeedStringList = []; 
+      _rssList = [];
+    } else {
+      _rssFeedStringList.forEach((feedsStr) { 
+        Map _feedMap = jsonDecode(feedsStr);
+        var _feed = new FeedsEntity.fromJson(_feedMap);
+        _rssList.add(_feed);
+      });
     }
 
     FeedParser feedParser = new FeedParser(url: multiRssEntity.rssUrl);
@@ -225,8 +235,10 @@ class FeedService {
           multiRssEntity.rssId,
           0);
 
-      if (!_rssFeedStringList.contains(jsonEncode(newFeed))) {
+      if (!_rssList.contains(newFeed)) {
         _rssFeedStringList.add(jsonEncode(newFeed));
+        _rssList.add(newFeed);
+        eventBus.event.fire(TabViewFeedEvent(feed: newFeed));
       }
     });
     prefs.setStringList(multiRssEntity.rssId.toString(), _rssFeedStringList);
@@ -237,9 +249,16 @@ class FeedService {
     final SharedPreferences prefs = await _prefs;
     List<String> _rssFeedStringList =
         prefs.getStringList(multiRssEntity.rssId.toString());
-
+    List<FeedsEntity> _rssList = [];
     if (_rssFeedStringList == null) {
-      _rssFeedStringList = [];
+      _rssFeedStringList = []; 
+      _rssList = [];
+    } else {
+      _rssFeedStringList.forEach((feedsStr) { 
+        Map _feedMap = jsonDecode(feedsStr);
+        var _feed = new FeedsEntity.fromJson(_feedMap);
+        _rssList.add(_feed);
+      });
     }
 
     FeedParser feedParser = new FeedParser(url: multiRssEntity.rssUrl);
@@ -264,27 +283,36 @@ class FeedService {
           multiRssEntity.rssId,
           0);
 
-      if (!_rssFeedStringList.contains(jsonEncode(newFeed))) {
-        eventBus.event.fire(TabViewFeedEvent(newFeed));
+      if (!_rssList.contains(newFeed)) {
+        print("发送数据:${newFeed.toString()}");
+        eventBus.event.fire(TabViewFeedEvent(feed: newFeed));
         _rssFeedStringList.add(jsonEncode(newFeed));
+        _rssList.add(newFeed);
       }
     });
     prefs.setStringList(multiRssEntity.rssId.toString(), _rssFeedStringList);
   }
 
   /// 获取所有喜欢列表
-  Future<List<FeedsEntity>> getAllFavorites() async {
-    return await feedsDao.findAllFeeds();
+  Future<void> getAllFavorites() async {
+    List<FeedsEntity> feedsList = await feedsDao.findAllFeeds();
+    eventBus.event
+        .fire(TabViewFeedEvent(feeds: feedsList, action: g.ACTION_LIKE));
   }
 
   /// 获取该分类下的所有喜欢列表
-  Future<List<FeedsEntity>> getFavoritesByCatalogId(int catalogId) async {
-    return await feedsDao.findFeedsByCatalogId(catalogId);
+  Future<void> getFavoritesByCatalogId(int catalogId) async {
+    List<FeedsEntity> feedsList =
+        await feedsDao.findFeedsByCatalogId(catalogId);
+    eventBus.event
+        .fire(TabViewFeedEvent(feeds: feedsList, action: g.ACTION_LIKE));
   }
 
   /// 根据 rssid 获取对应的喜欢列表
-  Future<List<FeedsEntity>> getFavoritesByRssId(int rssId) async {
-    return await feedsDao.findFeedsByRssId(rssId);
+  Future<void> getFavoritesByRssId(int rssId) async {
+    List<FeedsEntity> feedsList = await feedsDao.findFeedsByRssId(rssId);
+    eventBus.event
+        .fire(TabViewFeedEvent(feeds: feedsList, action: g.ACTION_LIKE));
   }
 
   /// 将 feed 保存到数据库中 添加到喜欢列表

@@ -6,6 +6,7 @@ import 'package:html/parser.dart';
 import 'package:rss/compents/rssFeedWidget.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/events/tabviewFeedEvent.dart';
+import 'package:rss/events/tabviewRefreshEvent.dart';
 import 'package:rss/events/tabviewRssEvent.dart';
 import 'package:rss/models/dao/rss2catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
@@ -13,7 +14,6 @@ import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/feeds_entity.dart';
 import 'package:rss/models/entity/rss2catalog_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
-import 'package:rss/models/entity/tab_entity.dart';
 import 'package:rss/service/rssService.dart';
 import 'package:rss/service/tabService.dart';
 import 'package:rss/tools/globalEventBus.dart';
@@ -35,7 +35,6 @@ class TabViewWidgetState extends State<TabViewWidget> {
   final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   final TabService tabService = new TabService();
   RssEntity selectedRss;
-  Future<TabEntity> tab;
   bool showToTopBtn = false;
   List<FeedsEntity> feedList = [];
   List<RssEntity> rssList = [];
@@ -65,7 +64,20 @@ class TabViewWidgetState extends State<TabViewWidget> {
     });
 
     eventBus.event.on<TabViewFeedEvent>().listen((events) {
-      addFeed(events.feed);
+      if (events.feed != null) {
+        addFeed(events.feed);
+      }
+      if (events.feeds != null) {
+        addFeeds(events.feeds);
+      }
+    });
+
+    eventBus.event.on<TabViewRefreshvent>().listen((event) {
+      print("监听刷新命令....");
+      if (event.refresh) {
+        print("开始刷新,当前 feedList 长度:${feedList.length}");
+        getTab();
+      }
     });
 
     getTab();
@@ -98,9 +110,17 @@ class TabViewWidgetState extends State<TabViewWidget> {
   }
 
   addFeed(feed) {
-    if(this.mounted) {
+    if (this.mounted && feedList.indexOf(feed) == -1 && feed != null) {
       setState(() {
         feedList.add(feed);
+      });
+    }
+  }
+
+  addFeeds(feeds) {
+    if (this.mounted) {
+      setState(() {
+        feedList = feeds;
       });
     }
   }
@@ -111,7 +131,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
     _scrollController?.dispose();
   }
 
- Future<void> getTab({RssEntity rssEntity, bool selected, int status}) async {
+  Future<void> getTab({RssEntity rssEntity, bool selected, int status}) async {
     await tabService.getTabs(catalog,
         rssEntity: selectedRss, selected: selected, status: status);
   }
@@ -132,16 +152,12 @@ class TabViewWidgetState extends State<TabViewWidget> {
     }
     print(
         "current catalog:${catalog.catalog} selectedRss:${selectedRss?.title} status:$status");
-    // setState(() {
     await tabService.getTabs(catalog,
         rssEntity: selectedRss, selected: selected, status: status);
-    // });
   }
 
-  void getFavorites() {
-    // setState(() {
-    tabService.getFavorites(catalog, rssId: selectedRss?.id);
-    // });
+  Future<void> getFavorites() async {
+    await tabService.getFavorites(catalog, rssId: selectedRss?.id);
   }
 
   Future<void> makeAllFeedsRead() async {
@@ -152,7 +168,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
     await tabService.makeFeedsRead(catalog,
         rssEntity: selectedRss, selected: selected);
     setState(() {
-      tab = getTab(rssEntity: selectedRss, selected: selected);
+      getTab(rssEntity: selectedRss, selected: selected);
     });
   }
 
@@ -220,11 +236,9 @@ class TabViewWidgetState extends State<TabViewWidget> {
 
                                         print(
                                             "selected:${selectedRss?.title} selected:$value");
-                                        setState(() {
-                                          tab = getTab(
+                                          getTab(
                                               rssEntity: selectedRss,
                                               selected: value);
-                                        });
                                       },
                                     ));
                               }))),
@@ -236,8 +250,6 @@ class TabViewWidgetState extends State<TabViewWidget> {
                           shrinkWrap: true,
                           itemCount: feedList.length,
                           itemBuilder: (context, index) {
-                            print(
-                                "${feedList[index].title}'s status:${feedList[index].status}");
                             FeedsEntity _feedsEntity = feedList[index];
                             String _coverUrl = _feedsEntity.content == null
                                 ? null
@@ -254,6 +266,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
                             }
 
                             RssFeedListTile card = new RssFeedListTile(
+                                key:ValueKey(_feedsEntity.url),
                                 tab: catalog.catalog,
                                 catalogId: _feedsEntity.catalogId,
                                 coverUrl: _coverUrl,
@@ -332,9 +345,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
                       selectedRss = null;
                     });
                   }
-                  setState(() {
-                    tab = getTab();
-                  });
+                  getTab();
                   Navigator.of(context).pop();
                 }).catchError((error) {
                   print(error.toString());

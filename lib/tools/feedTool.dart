@@ -35,6 +35,9 @@ class FeedTool {
           break;
         }
     }
+    if(index == -1) {
+      return;
+    }
     _rssFeedStringList.removeAt(index);
     Map feedMap = feeds.toJson();
     feedMap.putIfAbsent("status", () => 1);

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
 import 'package:provider/provider.dart';
 import 'package:rss/compents/tabviewWidget.dart';
+import 'package:rss/events/tabviewRefreshEvent.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
@@ -17,6 +18,7 @@ import 'package:rss/provider/theme_provider.dart';
 import 'package:rss/service/feedService.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/tools/feedParser.dart';
+import 'package:rss/tools/globalEventBus.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -41,6 +43,8 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
   IconData _star = Icons.star_border;
   IconData _all = Icons.view_list;
   bool _switchValue = false;
+  final GlobalEventBus eventBus = new GlobalEventBus();
+
 
   @override
   void initState() {
@@ -404,6 +408,7 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
   void _filtersBtton(int type) {
     switch (type) {
       case 0:
+        eventBus.event.fire(TabViewRefreshvent(true));
         setState(() {
           _all = Icons.view_list;
           _star = Icons.star_border;
