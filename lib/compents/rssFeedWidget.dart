@@ -81,9 +81,6 @@ class RssFeedLisTileState extends State<RssFeedListTile> {
         setState(() {
           status = 1;
         });
-        await feedTool.makeFeedRead(new FeedsEntity(null, title, link, author,
-            publishDate, content, catalogId, rssId, status));
-        print("status $status");
         Navigator.push(context, MaterialPageRoute(builder: (_) {
           return ArticleHeroWidget(
               content: content,

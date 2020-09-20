@@ -36,17 +36,17 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeData getTheme({bool isDarkMode = false}) {
     return ThemeData(
+      
       errorColor: isDarkMode ? Colours.dark_red : Colours.red,
       brightness: isDarkMode ? Brightness.dark : Brightness.light,
-      backgroundColor: isDarkMode ? Colors.black54 : Colors.white,
-      primaryColor: isDarkMode ? Colours.dark_app_primary : Colours.app_primary,
-      accentColor: isDarkMode ? Colours.dark_app_primary : Colours.app_primary,
+      primaryColor: isDarkMode ? Colours.dark_app_main : Color(0xff3F51B5),
+      accentColor: isDarkMode ? Colours.dark_app_main : Color(0xff8BC34A),
+      primaryColorDark: isDarkMode ? Colours.dark_app_main : Color(0xff303F9F),
+      primaryColorLight: isDarkMode ? Colours.dark_app_main : Color(0xffC5CAE9),
       // Tab指示器颜色
-      indicatorColor: isDarkMode ? Colours.dark_app_main : Colors.pinkAccent,
-      tabBarTheme:
-          TabBarTheme(labelColor:  Colors.white),
+      indicatorColor: isDarkMode ? Colours.dark_app_main : Colours.app_main,
       // 页面背景色
-      scaffoldBackgroundColor: isDarkMode ? Colors.black54 : Colors.white,
+      scaffoldBackgroundColor: isDarkMode ? Colours.dark_bg_color : Colors.white,
       // 主要用于Material背景色
       canvasColor: isDarkMode ? Colours.dark_material_bg : Colors.white,
       // 文字选择色（输入框复制粘贴菜单）
@@ -57,30 +57,28 @@ class ThemeProvider extends ChangeNotifier {
         subtitle1: isDarkMode ? TextStyles.textDark : TextStyles.text,
         // Text文字样式
         bodyText2: isDarkMode ? TextStyles.textDark : TextStyles.text,
-        subtitle2:
-            isDarkMode ? TextStyles.textDarkGray12 : TextStyles.textGray12,
+        subtitle2: isDarkMode ? TextStyles.textDarkGray12 : TextStyles.textGray12,
       ),
       inputDecorationTheme: InputDecorationTheme(
-        hintStyle:
-            isDarkMode ? TextStyles.textHint14 : TextStyles.textDarkGray14,
+        hintStyle: isDarkMode ? TextStyles.textHint14 : TextStyles.textDarkGray14,
       ),
       appBarTheme: AppBarTheme(
-          elevation: 0.0,
-          textTheme: TextTheme(title: TextStyle(color: Colors.white)),
-          color: isDarkMode ? Colours.dark_bg_color : Colors.purple,
-          iconTheme: IconThemeData(color: Colors.white),
-          brightness: isDarkMode ? Brightness.dark : Brightness.light),
-      bottomAppBarTheme: BottomAppBarTheme(
-        color:isDarkMode ? Colours.dark_bg_color : Colors.purple,
-        ),
-    
+        elevation: 0.0,
+        // color: isDarkMode ? Colours.dark_bg_color : Colors.white,
+        brightness: isDarkMode ? Brightness.dark : Brightness.light,
+      ),
       dividerTheme: DividerThemeData(
-          color: isDarkMode ? Colours.dark_line : Colours.line,
-          space: 0.6,
-          thickness: 0.6),
+        color: isDarkMode ? Colours.dark_line : Colours.line,
+        space: 0.6,
+        thickness: 0.6
+      ),
       cupertinoOverrideTheme: CupertinoThemeData(
         brightness: isDarkMode ? Brightness.dark : Brightness.light,
       ),
+      iconTheme: IconThemeData(color: Colors.white),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: isDarkMode ? Color(0x8BC34A) : Color(0x8BC34A)
+      )
       // pageTransitionsTheme: NoTransitionsOnWeb(),
     );
   }

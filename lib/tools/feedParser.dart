@@ -10,7 +10,8 @@ class FeedParser {
 
   Future<RssFeed> parseRss() async {
     try {
-      var response = await client.get(this.url).timeout(Duration(seconds: 5));
+      var headers = {"charset":"utf8"};
+      var response = await client.get(this.url,headers: headers).timeout(Duration(seconds: 5));
       var channel = RssFeed.parse(response.body);
       return channel;
     } catch (e) {
@@ -20,7 +21,8 @@ class FeedParser {
 
   Future<AtomFeed> parseAtom() async {
     try {
-      var response = await client.get(this.url).timeout(Duration(seconds: 5));
+      var headers = {"charset":"utf8"};
+      var response = await client.get(this.url,headers: headers).timeout(Duration(seconds: 5));
       var feed = AtomFeed.parse(response.body);
       return feed;
     } catch (e) {

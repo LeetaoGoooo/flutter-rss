@@ -10,6 +10,7 @@ import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/models/dao/feeds_dao.dart';
 import 'package:rss/models/entity/feeds_entity.dart';
 import 'package:rss/service/feedService.dart';
+import 'package:rss/tools/feedTool.dart';
 import 'package:share/share.dart';
 import 'package:http/http.dart' as http;
 
@@ -48,6 +49,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   final String pubDate;
   final int rssId;
   final int catalogId;
+  final FeedTool feedTool = new FeedTool();
   String content;
   final String author;
   final VoidCallback onTap;
@@ -58,7 +60,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   final FeedsDao feedsDao = g.feedsDao;
   FontSize defaultFontSize = FontSize(14);
   double defaultFontSizeValue = 14;
-  Color _bookmarkColor;
+  IconData bookmark = Icons.bookmark_border;
 
   ArticleHeroWidgetState(
     this.link,
@@ -79,9 +81,6 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    setState(() {
-      _bookmarkColor = Theme.of(context).iconTheme.color;
-    });
     loadContent();
     _isMarked();
   }
@@ -93,6 +92,8 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         content = response.body;
       });
     }
+    await feedTool.makeFeedRead(new FeedsEntity(
+        null, title, link, author, pubDate, content, catalogId, rssId, 1));
   }
 
   @override
@@ -101,6 +102,14 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: Text(title),
+        leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              // color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, "/");
+            }),
         actions: [
           IconButton(
               icon: Icon(
@@ -116,22 +125,39 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         ],
       ),
       bottomNavigationBar: BottomAppBar(
-        color: Theme.of(context).bottomAppBarColor,
+        color: Theme.of(context).bottomAppBarTheme.color,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             IconButton(
                 icon: Icon(
-                  Icons.bookmark,
-                  color: _bookmarkColor,
+                  bookmark,
+                  color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () async {
                   await _markBookMark();
                 }),
             IconButton(
+              icon: Icon(
+                Icons.arrow_upward,
+                color: Theme.of(context).appBarTheme.iconTheme.color,
+              ),
+              onPressed: () async {
+                await _getFeed(-1);
+              },
+            ),
+            IconButton(
+                icon: Icon(
+                  Icons.arrow_downward,
+                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                ),
+                onPressed: () async {
+                  await _getFeed(1);
+                }),
+            IconButton(
                 icon: Icon(
                   Icons.zoom_in,
-                  // color: Colors.white,
+                  color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () {
                   setState(() {
@@ -142,7 +168,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   Icons.zoom_out,
-                  // color: Colors.white,
+                  color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () {
                   setState(() {
@@ -152,10 +178,6 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
                 })
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.arrow_downward),
-        onPressed: () {},
       ),
       body: GestureDetector(
           onTap: () {
@@ -202,7 +224,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         FeedsEntity feedsEntity = value.first;
         setState(() {
           _feedId = feedsEntity.id;
-          _bookmarkColor = Theme.of(context).accentColor;
+          bookmark = Icons.bookmark;
         });
       }
     });
@@ -210,12 +232,11 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
 
   _markBookMark() {
     setState(() {
-      _bookmarkColor = _bookmarkColor == Theme.of(context).iconTheme.color
-          ? Theme.of(context).accentColor
-          : Theme.of(context).iconTheme.color;
+      bookmark =
+          bookmark == Icons.bookmark ? Icons.bookmark_border : Icons.bookmark;
     });
     String _message = "Removed From Favorites";
-    if (_bookmarkColor == Theme.of(context).accentColor) {
+    if (bookmark == Icons.bookmark) {
       _message = "Marked as favorite";
       feedService
           .addFeedToFavorite(FeedsEntity(
@@ -240,5 +261,31 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
       content: Text(_message),
       behavior: SnackBarBehavior.floating,
     ));
+  }
+
+  /// 获取另外一阶段的feed
+  /// index 为 1，则next
+  /// index 为 -1，则pre
+  _getFeed(int index) async {
+    FeedsEntity currentFeed = FeedsEntity(
+        null, title, link, author, pubDate, content, catalogId, rssId, 1);
+    FeedsEntity findFeed = await feedService.getCertainFeed(currentFeed, index);
+    if (findFeed == null) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text("No feed was found"),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (_) {
+        return ArticleHeroWidget(
+            content: findFeed.content,
+            link: findFeed.url,
+            author: findFeed.author,
+            pubDate: findFeed.published,
+            title: findFeed.title,
+            rssId: findFeed.rssId,
+            catalogId: findFeed.catalogId);
+      }));
+    }
   }
 }

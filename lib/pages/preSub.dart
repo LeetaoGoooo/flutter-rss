@@ -56,7 +56,6 @@ class _PreSubStatefulWidgetState extends State<PreSubPage> {
         child: new Column(children: <Widget>[
           Card(
             child: ListTile(
-                // leading: FlutterLogo(size: 56.0),
                 title: Text(title),
                 subtitle: Text(feedsUrl)),
           ),

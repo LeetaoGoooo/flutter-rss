@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
 import 'package:provider/provider.dart';
 import 'package:rss/compents/tabviewWidget.dart';
-import 'package:rss/events/tabviewRefreshEvent.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
 import 'package:rss/models/entity/catalog_entity.dart';
@@ -14,6 +13,7 @@ import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/pages/catalogManage.dart';
 
 import 'package:rss/pages/preSub.dart';
+import 'package:rss/pages/searchPage.dart';
 import 'package:rss/provider/theme_provider.dart';
 import 'package:rss/service/feedService.dart';
 import 'package:rss/constants/globals.dart' as g;
@@ -25,7 +25,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => HomeStatePage();
 }
 
-class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
+class HomeStatePage extends State<HomePage> with TickerProviderStateMixin {
   TextEditingController _textFieldController = TextEditingController();
   bool _urlValidate = true;
   String _feedUrlHintMsg = 'Url is not validate';
@@ -45,7 +45,6 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
   bool _switchValue = false;
   final GlobalEventBus eventBus = new GlobalEventBus();
 
-
   @override
   void initState() {
     super.initState();
@@ -57,10 +56,10 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
   }
 
   loadTabController() {
-     _getAllCatalogs().then((value) {
+    _getAllCatalogs().then((value) {
       List<Widget> _widgets = [];
       value.forEach((element) {
-        if(_tabs.indexOf(element) != -1) {
+        if (_tabs.indexOf(element) != -1) {
           return;
         }
         var _key = GlobalKey<TabViewWidgetState>();
@@ -98,6 +97,10 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                 tooltip: 'Search',
                 onPressed: () {
                   //
+                  Navigator.of(context)
+                      .push(new MaterialPageRoute(builder: (_) {
+                    return new SearchPage();
+                  }));
                 },
               ),
               IconButton(
@@ -141,9 +144,7 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                 backgroundColor: const Color(0xFF778899),
                 backgroundImage: AssetImage('assets/default.png'),
               ),
-              accountName: Text(
-                "author:Leetao"
-              ),
+              accountName: Text("author:Leetao"),
               accountEmail: Text("leetao94@gmail.com")),
           Padding(
             padding: EdgeInsets.fromLTRB(16.0, 18.0, 0.0, 0.0),
@@ -179,7 +180,8 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                 onChanged: (value) {
                   ThemeMode themeMode =
                       value ? ThemeMode.dark : ThemeMode.light;
-                  Provider.of<ThemeProvider>(context, listen: false).setTheme(themeMode);
+                  Provider.of<ThemeProvider>(context, listen: false)
+                      .setTheme(themeMode);
                   setState(() {
                     _switchValue = value;
                   });
@@ -188,7 +190,7 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
           )
         ]))),
         body: new Container(
-          child: Column(
+          child:Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Expanded(
@@ -203,24 +205,23 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
               children: [
                 Spacer(),
                 IconButton(
-                    icon: Icon(_all,color: Theme.of(context).appBarTheme.iconTheme.color,),
+                    icon: Icon(
+                      _all,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     onPressed: () {
                       _filterFeeds(0);
                     }),
                 IconButton(
-                  icon: Icon(
-                    _unread,
-                    color: Theme.of(context).appBarTheme.iconTheme.color
-                  ),
+                  icon: Icon(_unread,
+                      color: Theme.of(context).iconTheme.color),
                   onPressed: () {
                     _filterFeeds(1, status: 0);
                   },
                 ),
                 IconButton(
-                    icon: Icon(
-                      _star,
-                      color: Theme.of(context).appBarTheme.iconTheme.color
-                    ),
+                    icon: Icon(_star,
+                        color: Theme.of(context).iconTheme.color),
                     onPressed: () {
                       _filterFeeds(2, status: 0);
                     })
@@ -272,7 +273,7 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                       padding: const EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 0.0),
                     ),
                     ProgressButton(
-                      defaultWidget: const Text('SEARCH'),
+                      defaultWidget: const Text('SEARCH',style: TextStyle(color: Colors.white),),
                       progressWidget: const CircularProgressIndicator(
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white)),
@@ -328,11 +329,11 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
                               type: FileType.custom,
                               allowedExtensions: ['opml']);
                           if (file != null) {
-                            print("parse...");
-                            await feedService.parseOPML(file).then((value) => {
-                              loadTabController()
-                            });
+                            feedService
+                                .parseOPML(file)
+                                .then((value) => {loadTabController()});
                           }
+                          Navigator.pop(context);
                         },
                         child: Text("Import from OPML"),
                       ),
@@ -408,7 +409,7 @@ class HomeStatePage extends State<HomePage>  with TickerProviderStateMixin{
   void _filtersBtton(int type) {
     switch (type) {
       case 0:
-        eventBus.event.fire(TabViewRefreshvent(true));
+        // eventBus.event.fire(TabViewRefreshvent(true));
         setState(() {
           _all = Icons.view_list;
           _star = Icons.star_border;

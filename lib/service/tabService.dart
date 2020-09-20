@@ -1,16 +1,14 @@
-// import 'package:flutter/foundation.dart';
-import 'package:rss/events/tabviewRssEvent.dart';
-import 'package:rss/models/entity/catalog_entity.dart';
-import 'package:rss/models/entity/feeds_entity.dart';
-import 'package:rss/models/entity/rss_entity.dart';
-import 'package:rss/service/feedService.dart';
-import 'package:rss/service/rssService.dart';
-import 'package:rss/tools/globalEventBus.dart';
-
 /// file        : tabService.dart
 /// descrption  :
 /// date        : 2020/09/04 12:40:58
 /// author      : Leetao
+
+import 'package:rss/events/tabviewRssEvent.dart';
+import 'package:rss/models/entity/catalog_entity.dart';
+import 'package:rss/models/entity/rss_entity.dart';
+import 'package:rss/service/feedService.dart';
+import 'package:rss/service/rssService.dart';
+import 'package:rss/tools/globalEventBus.dart';
 
 class TabService {
   final RssService rssService = new RssService();
@@ -21,7 +19,7 @@ class TabService {
   getTabs(CatalogEntity catalog,
       {RssEntity rssEntity, bool selected, int status}) async {
     List<RssEntity> rss = await rssService.getRssList(catalog);
-    eventBus.event.fire(TabViewRssEvent(rssList: rss));
+    eventBus.event.fire(TabViewRssEvent(catalog,rssList: rss));
     print("rss length:${rss.length}");
     if (rssEntity == null) {
       await feedService.getFeeds(catalog,status:status);
