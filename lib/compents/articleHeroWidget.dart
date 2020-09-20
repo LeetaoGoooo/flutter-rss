@@ -104,7 +104,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         title: Text(title),
         leading: IconButton(
             icon: Icon(
-              Icons.arrow_back,
+              Icons.arrow_back_ios,
               // color: Colors.white,
             ),
             onPressed: () {
@@ -132,7 +132,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   bookmark,
-                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                  // color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () async {
                   await _markBookMark();
@@ -140,7 +140,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
               icon: Icon(
                 Icons.arrow_upward,
-                color: Theme.of(context).appBarTheme.iconTheme.color,
+                // color: Theme.of(context).appBarTheme.iconTheme.color,
               ),
               onPressed: () async {
                 await _getFeed(-1);
@@ -149,7 +149,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   Icons.arrow_downward,
-                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                  // color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () async {
                   await _getFeed(1);
@@ -157,7 +157,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   Icons.zoom_in,
-                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                  // color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () {
                   setState(() {
@@ -168,7 +168,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
             IconButton(
                 icon: Icon(
                   Icons.zoom_out,
-                  color: Theme.of(context).appBarTheme.iconTheme.color,
+                  // color: Theme.of(context).appBarTheme.iconTheme.color,
                 ),
                 onPressed: () {
                   setState(() {

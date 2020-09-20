@@ -23,12 +23,13 @@ class RssEditDialog extends StatefulWidget {
       this.catalog,
       this.catalogId,
       this.rssId,
-      this.url, this.voidCallback})
+      this.url,
+      this.voidCallback})
       : super(key: key);
 
   @override
-  RssEditDialogState createState() =>
-      new RssEditDialogState(avatar, title, catalog, catalogId, rssId, url, voidCallback);
+  RssEditDialogState createState() => new RssEditDialogState(
+      avatar, title, catalog, catalogId, rssId, url, voidCallback);
 }
 
 class RssEditDialogState extends State<RssEditDialog> {
@@ -100,26 +101,51 @@ class RssEditDialogState extends State<RssEditDialog> {
                           await _validateUrl(value);
                         },
                         controller: _urlController,
+                        cursorColor: Theme.of(context).accentColor,
                         decoration: InputDecoration(
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.yellow[700],
+                            ),
+                          ),
                           labelText: 'Url',
                           errorText: _urlErrorText,
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey,
+                            ),
+                          ),
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(
                             Icons.link,
+                            color: Colors.grey,
                           ),
                         ),
                       )),
                   Padding(
                       padding: EdgeInsets.fromLTRB(16, 20, 16, 0),
                       child: TextFormField(
+                        cursorColor: Theme.of(context).accentColor,
                         onChanged: (value) => _validateName(value),
                         controller: _nameController,
                         decoration: InputDecoration(
                           labelText: 'Name',
                           errorText: _nameErrorText,
                           border: OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.yellow[700],
+                              width: 2.0,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey,
+                            ),
+                          ),
                           prefixIcon: Icon(
                             Icons.language,
+                            color: Colors.grey,
                           ),
                         ),
                       )),
@@ -137,7 +163,18 @@ class RssEditDialogState extends State<RssEditDialog> {
                                     labelText: "Catalog",
                                     border: OutlineInputBorder(
                                         borderRadius:
-                                            BorderRadius.circular(5.0))),
+                                            BorderRadius.circular(5.0)),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.yellow[700],
+                                        width: 2.0,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.grey,
+                                      ),
+                                    )),
                                 onChanged: (int value) {
                                   setState(() {
                                     _currentSelectCatalogId = value;
@@ -169,7 +206,7 @@ class RssEditDialogState extends State<RssEditDialog> {
                             (_urlErrorText != null || _nameErrorText != null)
                                 ? null
                                 : () async {
-                                   await _save();
+                                    await _save();
                                   }),
                   )
                 ],
@@ -218,9 +255,11 @@ class RssEditDialogState extends State<RssEditDialog> {
     print("url:$_url,name:$_name,rssId:$_rssId,catalog:$_catalogId");
     RssService rssService = new RssService();
     await rssService.updateRss(_rssId, _name, _url, _catalogId).then((value) {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text("Update Success")));
-    }).catchError((e){
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text("Update Failed")));
+      _scaffoldKey.currentState
+          .showSnackBar(SnackBar(content: Text("Update Success")));
+    }).catchError((e) {
+      _scaffoldKey.currentState
+          .showSnackBar(SnackBar(content: Text("Update Failed")));
     });
     widget.voidCallback();
   }

@@ -223,7 +223,7 @@ class RssCardStateWidget extends State<RssCard> {
                     height: circleRadius,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Theme.of(context).colorScheme.background,
+                      color: Colors.white,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black26,

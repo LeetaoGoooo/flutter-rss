@@ -35,9 +35,9 @@ class CatalogSettingState extends State<CatalogSetting> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: Text("CatalogSettings"),
-        // // elevation: 0,
-        // backgroundColorStart: Colors.deepPurple,
-        // backgroundColorEnd: Colors.purple,
+        leading: IconButton(icon: Icon(Icons.arrow_back_ios,color: Theme.of(context).iconTheme.color,),onPressed: (){
+          Navigator.of(context).pop();
+        },),
         actions: [
           IconButton(
               icon: Icon(Icons.add),

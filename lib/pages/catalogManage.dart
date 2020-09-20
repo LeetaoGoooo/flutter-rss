@@ -46,15 +46,8 @@ class CatalogManageStateWidget extends State<CatalogManage> {
     print("build...");
     return Scaffold(
         appBar: AppBar(
-          title: Text("CatalogManage"),
-          leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                // color: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.pushReplacementNamed(context, "/");
-              }),
+          automaticallyImplyLeading: false,
+          title: Text("CATALOGS"),
           actions: [
             IconButton(
                 icon: Icon(Icons.settings),

@@ -179,69 +179,6 @@ class TabViewWidgetState extends State<TabViewWidget> {
         child: (feedList.length > 0 || rssList.length > 0)
             ? Stack(children: <Widget>[
                 Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                  Expanded(
-                      flex: 1,
-                      child: Align(
-                          alignment: Alignment.topLeft,
-                          child: ListView.builder(
-                              itemCount: rssList.length,
-                              physics: BouncingScrollPhysics(),
-                              scrollDirection: Axis.horizontal,
-                              shrinkWrap: true,
-                              itemBuilder: (BuildContext context, int index) {
-                                RssEntity rssEntity = rssList[index];
-                                print(
-                                    "catalog ${catalog.catalog} rss ${rssEntity.title}");
-                                return Padding(
-                                    padding: EdgeInsets.fromLTRB(16, 0, 0, 0),
-                                    child: RawChip(
-                                      avatar: (selectedRss == null ||
-                                              selectedRss.id != rssEntity.id)
-                                          ? null
-                                          : CircleAvatar(
-                                              backgroundColor: Theme.of(context)
-                                                  .chipTheme
-                                                  .backgroundColor),
-                                      selected: (selectedRss == null ||
-                                              selectedRss.id != rssEntity.id)
-                                          ? false
-                                          : true,
-                                      label: Text(rssEntity.title),
-                                      selectedColor: Theme.of(context)
-                                          .chipTheme
-                                          .selectedColor,
-                                      selectedShadowColor: Theme.of(context)
-                                          .chipTheme
-                                          .selectedShadowColor,
-                                      deleteIcon: Icon(Icons.cancel,
-                                          color: Theme.of(context)
-                                              .chipTheme
-                                              .deleteIconColor,
-                                          size: 18),
-                                      onDeleted: () async {
-                                        await _unsubcribeDialog(rssEntity);
-                                      },
-                                      onSelected: (value) {
-                                        print(
-                                            "value:$value selectedRss:${selectedRss?.title} ${rssEntity.title}");
-                                        if (selectedRss == rssEntity) {
-                                          setState(() {
-                                            selectedRss = null;
-                                          });
-                                        } else {
-                                          setState(() {
-                                            selectedRss = rssEntity;
-                                          });
-                                        }
-
-                                        print(
-                                            "selected:${selectedRss?.title} selected:$value");
-                                        getTab(
-                                            rssEntity: selectedRss,
-                                            selected: value);
-                                      },
-                                    ));
-                              }))),
                   Visibility(
                       visible: showProgressBar,
                       child: LinearProgressIndicator()),
@@ -262,6 +199,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
                         right: 20,
                         bottom: 20,
                         child: FloatingActionButton(
+                            backgroundColor: Theme.of(context).buttonColor,
                             onPressed: () {
                               if (_scrollController.hasClients) {
                                 _scrollController.animateTo(0,
@@ -269,7 +207,7 @@ class TabViewWidgetState extends State<TabViewWidget> {
                                     curve: Curves.ease);
                               }
                             },
-                            child: Icon(Icons.arrow_upward))))
+                            child: Icon(Icons.arrow_upward,color: Theme.of(context).iconTheme.color,))))
               ])
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
