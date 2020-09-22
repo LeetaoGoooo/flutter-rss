@@ -10,3 +10,5 @@ final int WAITS = 3;
 final String ACTION_LIKE="ACTION_LIKE"; // 获取喜欢的列表
 final String ACTION_ALL="ACTION_ALL"; // 获取所有的列表
 final String ACTION_UNREAD = "ACTION_UNREAD"; // 获取所有的未读列表
+
+final String WIFI_ONLY="WIFI_ONLY";

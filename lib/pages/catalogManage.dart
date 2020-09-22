@@ -33,6 +33,12 @@ class CatalogManageStateWidget extends State<CatalogManage> {
   }
 
   addRssCard(RssCardEntity rssCard) {
+    if(rssCard == null){
+      setState(() {
+        showProgressBar = false;
+      });
+      return;
+    }
     if (this.mounted && !rssCardList.contains(rssCard)) {
       setState(() {
           rssCardList.add(rssCard);

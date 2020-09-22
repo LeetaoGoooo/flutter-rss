@@ -35,9 +35,15 @@ class CatalogSettingState extends State<CatalogSetting> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: Text("CatalogSettings"),
-        leading: IconButton(icon: Icon(Icons.arrow_back_ios,color: Theme.of(context).iconTheme.color,),onPressed: (){
-          Navigator.of(context).pop();
-        },),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
         actions: [
           IconButton(
               icon: Icon(Icons.add),
@@ -262,9 +268,11 @@ class CatalogSettingState extends State<CatalogSetting> {
         .insertCatalog(
             CatalogEntity(null, _newCatlogController.value.text.trim()))
         .then((value) {
-      setState(() {
-        catalogs = getAllCatalogs();
-      });
+      if (this.mounted) {
+        setState(() {
+          catalogs = getAllCatalogs();
+        });
+      }
       _scaffoldKey.currentState.showSnackBar(SnackBar(
         content: Text("Add Catalog Success"),
       ));

@@ -11,7 +11,6 @@ import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 
 import 'package:rss/pages/preSub.dart';
-import 'package:rss/pages/searchPage.dart';
 import 'package:rss/service/feedService.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/tools/feedParser.dart';

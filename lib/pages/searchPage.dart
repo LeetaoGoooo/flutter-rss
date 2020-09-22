@@ -63,7 +63,7 @@ class SearchStatePage extends State<SearchPage> {
                     padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
                     child: TextField(
                       controller: _controller,
-                      style:Theme.of(context).appBarTheme.textTheme.subtitle1,
+                      style: Theme.of(context).appBarTheme.textTheme.subtitle1,
                       decoration: InputDecoration(
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.yellow[700]),
@@ -151,9 +151,6 @@ class SearchStatePage extends State<SearchPage> {
             title: Text("Filter Results"),
           ),
           frontLayer: Container(
-              decoration: BoxDecoration(
-                color: Colors.red
-              ),
               child: ListView.builder(
             itemCount: filterFeedList.length,
             scrollDirection: Axis.vertical,
@@ -184,8 +181,7 @@ class SearchStatePage extends State<SearchPage> {
                 ),
               );
             },
-          ))
-          ),
+          ))),
     );
   }
 }

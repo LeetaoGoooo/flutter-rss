@@ -1,5 +1,5 @@
 /// file        : catalogService.dart
-/// descrption  : 
+/// descrption  :
 /// date        : 2020/09/18 15:10:50
 /// author      : Leetao
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ import 'package:rss/models/entity/rsscard_entity.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/service/feedService.dart';
 import 'package:rss/tools/globalEventBus.dart';
-
+import 'package:rss/tools/netWork.dart';
 
 class CatalogService {
   final client = http.Client();
@@ -24,21 +24,32 @@ class CatalogService {
   getAllRssCard() async {
     print("加载rssCard...");
     List<MultiRssEntity> _multiRssList = await rssDao.findAllMultiRss();
+    if(_multiRssList.length == 0){
+      eventBus.event.fire(RssCardEvent(null));
+    }
     for (var item in _multiRssList) {
-       await _getRssCardEntity(item);
+      await _getRssCardEntity(item);
     }
   }
 
-
   Future<RssCardEntity> _getRssCardEntity(MultiRssEntity multiRssEntity) async {
-      var _catalog = await catalogDao.findCatalogById(multiRssEntity.catalogId);
-      var _subTitle = _catalog == null ? "All": _catalog.catalog;
-      var _avatar = await _getWebSiteIcon(multiRssEntity.rssUrl);
-      var _readMap =  await feedService.getFeedReadStatus(multiRssEntity.rssId.toString());
-      RssCardEntity rssCardEntity = new RssCardEntity(_avatar, multiRssEntity.rssTitle, _subTitle, _readMap['all'], _readMap['read'], _readMap['unread'], multiRssEntity.rssId, multiRssEntity.catalogId, multiRssEntity.rssUrl);
-      eventBus.event.fire(RssCardEvent(rssCardEntity));
+    var _catalog = await catalogDao.findCatalogById(multiRssEntity.catalogId);
+    var _subTitle = _catalog == null ? "All" : _catalog.catalog;
+    var _avatar = await _getWebSiteIcon(multiRssEntity.rssUrl);
+    var _readMap =
+        await feedService.getFeedReadStatus(multiRssEntity.rssId.toString());
+    RssCardEntity rssCardEntity = new RssCardEntity(
+        _avatar,
+        multiRssEntity.rssTitle,
+        _subTitle,
+        _readMap['all'],
+        _readMap['read'],
+        _readMap['unread'],
+        multiRssEntity.rssId,
+        multiRssEntity.catalogId,
+        multiRssEntity.rssUrl);
+    eventBus.event.fire(RssCardEvent(rssCardEntity));
   }
-
 
   Future<Widget> _getWebSiteIcon(String feedUrl) async {
     List<String> urlSplits = feedUrl.split("/");
@@ -59,8 +70,11 @@ class CatalogService {
     return _image;
   }
 
-
   Future<String> _getFaviconUrl(String domain) async {
+    if (!await NetWorkTool.isConnected()) {
+      print("当前网络未连接");
+      return null;
+    }
     try {
       var response = await client.get(domain).timeout(Duration(seconds: 5));
       RegExp regExp = new RegExp(r'rel="shortcut icon" href="(.+\.ico).+?"');

@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:floor/floor.dart';
 import 'package:intl/intl.dart';
+import 'package:rss/constants/globals.dart';
 import 'package:rss/events/filterFeedEvent.dart';
 import 'package:rss/events/tabviewFeedEvent.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
@@ -22,6 +23,7 @@ import 'package:rss/models/entity/rss_entity.dart';
 import 'package:rss/third/opmlparser/lib/opmlparser.dart';
 import 'package:rss/tools/feedParser.dart';
 import 'package:rss/tools/globalEventBus.dart';
+import 'package:rss/tools/netWork.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:webfeed/domain/atom_feed.dart';
@@ -181,6 +183,16 @@ class FeedService {
 
   _buildFeeds(MultiRssEntity multiRssEntity) async {
     final SharedPreferences prefs = await _prefs;
+    if (!prefs.containsKey(WIFI_ONLY) || prefs.getBool(WIFI_ONLY)) {
+      if (!await NetWorkTool.isConnected()) {
+        print("当前网络未连接");
+        return;
+      }
+      if (!await NetWorkTool.isWifi()) {
+        print("当前网络不是 wifi，停止刷新");
+        return;
+      }
+    }
     // 判断 shared 是否存在，不存在则去更新，否则使用 shared 内容
     print("contains:${prefs.containsKey(multiRssEntity.rssId.toString())}");
     try {
@@ -477,21 +489,24 @@ class FeedService {
     return null;
   }
 
-  Future<void> getFilterFeeds(String filter,{bool titleOnly, bool contentOnly}) async {
+  Future<void> getFilterFeeds(String filter,
+      {bool titleOnly, bool contentOnly}) async {
     List<FeedsEntity> feeds = await getLocalAllFeeds();
-    print("getFilterFeeds:filter:$filter, titleOnly:$titleOnly, contentOnly:$contentOnly");
-    feeds.forEach((element) { 
-      if(titleOnly && contentOnly) {
-        if(element.title.contains(filter) || element.content.contains(filter)) {
+    print(
+        "getFilterFeeds:filter:$filter, titleOnly:$titleOnly, contentOnly:$contentOnly");
+    feeds.forEach((element) {
+      if (titleOnly && contentOnly) {
+        if (element.title.contains(filter) ||
+            element.content.contains(filter)) {
           print("发现数据...");
           eventBus.event.fire(FilterFeedEvent(element));
         }
-      }else if(titleOnly) {
-        if(element.title.contains(filter)){
+      } else if (titleOnly) {
+        if (element.title.contains(filter)) {
           eventBus.event.fire(FilterFeedEvent(element));
         }
       } else {
-        if(element.content.contains(filter)) {
+        if (element.content.contains(filter)) {
           eventBus.event.fire(FilterFeedEvent(element));
         }
       }
