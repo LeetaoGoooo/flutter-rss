@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flustars/flustars.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -38,7 +39,6 @@ Future<void> main() async {
 class PeachRssApp extends StatelessWidget {
   final ThemeData theme;
 
-
   PeachRssApp({this.theme});
 
   @override
@@ -46,13 +46,16 @@ class PeachRssApp extends StatelessWidget {
     return ChangeNotifierProvider<ThemeProvider>(
         create: (_) => ThemeProvider(),
         child: Consumer<ThemeProvider>(builder: (pcontext, provider, __) {
-          return MaterialApp(
-              theme: theme ?? provider.getTheme(),
-              darkTheme: provider.getTheme(isDarkMode: true),
-              themeMode: provider.getThemeMode(),
-              title: 'RSS',
-              home: HomePage()
-          );
+          print("theme change...");
+          return provider.getThemeMode() == ThemeMode.dark
+              ? MaterialApp(
+                  theme: provider.getTheme(isDarkMode: true),
+                  title: 'RSS',
+                  home: HomePage())
+              : MaterialApp(
+                  theme: provider.getTheme(),
+                  title: 'RSS',
+                  home: HomePage());
         }));
   }
 }

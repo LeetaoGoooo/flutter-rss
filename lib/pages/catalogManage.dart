@@ -33,17 +33,29 @@ class CatalogManageStateWidget extends State<CatalogManage> {
   }
 
   addRssCard(RssCardEntity rssCard) {
-    if(rssCard == null){
+    if (rssCard == null) {
       setState(() {
         showProgressBar = false;
       });
       return;
     }
-    if (this.mounted && !rssCardList.contains(rssCard)) {
-      setState(() {
+    if (this.mounted) {
+      if (!rssCardList.contains(rssCard)) {
+        setState(() {
           rssCardList.add(rssCard);
-        showProgressBar = false;
-      });
+          showProgressBar = false;
+        });
+      } else {
+        int index = rssCardList.indexOf(rssCard);
+        RssCardEntity queryCard = rssCardList[index];
+        if (queryCard.title != rssCard.title ||
+            queryCard.url != rssCard.url ||
+            queryCard.catalogId != rssCard.catalogId) {
+            rssCardList.removeAt(index);
+            rssCardList.insert(index, rssCard);
+            setState(() {});
+        }
+      }
     }
   }
 
@@ -53,7 +65,8 @@ class CatalogManageStateWidget extends State<CatalogManage> {
     return Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Text("CATALOGS"),
+          title: Text("CATALOGS",
+              style: Theme.of(context).appBarTheme.textTheme.subtitle1),
           actions: [
             IconButton(
                 icon: Icon(Icons.settings),
@@ -79,7 +92,8 @@ class CatalogManageStateWidget extends State<CatalogManage> {
                   SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
               itemBuilder: (context, index) {
                 RssCardEntity rssCard = rssCardList[index];
-                return RssCard(
+                print("当前 title:${rssCard.title}");
+                return new RssCard(
                   avatar: rssCard.avatar,
                   title: rssCard.title,
                   subTitle: rssCard.subTitle,

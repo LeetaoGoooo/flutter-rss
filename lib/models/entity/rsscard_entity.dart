@@ -22,17 +22,10 @@ class RssCardEntity {
   @override
   bool operator ==(o) =>
       o is RssCardEntity &&
-      o.title == title &&
-      o.subTitle == subTitle &&
-      o.all == all &&
-      o.read == read &&
-      o.unread == unread &&
       o.rssId == rssId &&
-      o.catalogId == catalogId &&
       o.url == url;
 
   @override
-  // TODO: implement hashCode
-  int get hashCode => super.hashCode;
+  int get hashCode => rssId.hashCode ^ url.hashCode;
 
 }

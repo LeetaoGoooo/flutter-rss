@@ -34,7 +34,7 @@ class CatalogSettingState extends State<CatalogSetting> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text("CatalogSettings"),
+        title: Text("CatalogSettings",style: Theme.of(context).appBarTheme.textTheme.subtitle1),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,

@@ -34,41 +34,18 @@ class RssCard extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => RssCardStateWidget(avatar, title,
-      subTitle, all, read, unread, rssId, url, catalogId, voidCallback);
+  State<StatefulWidget> createState() => RssCardStateWidget();
 }
 
 class RssCardStateWidget extends State<RssCard> {
-  final Widget avatar;
-  final String title;
-  final String subTitle;
-  final int all;
-  final int read;
-  final int unread;
-  final int rssId;
-  final int catalogId;
-  final String url;
-  final AsyncCallback voidCallback;
-
   final double circleRadius = 60.0;
   final Rss2CatalogDao rss2catalogDao = g.rss2catalogDao;
   final RssDao rssDao = g.rssDao;
   final FeedService feedService = new FeedService();
 
-  RssCardStateWidget(
-      this.avatar,
-      this.title,
-      this.subTitle,
-      this.all,
-      this.read,
-      this.unread,
-      this.rssId,
-      this.url,
-      this.catalogId,
-      this.voidCallback);
-
   @override
   Widget build(BuildContext context) {
+    print("rssCardWidget ${widget.title}");
     return GestureDetector(
         onTap: () {},
         onLongPress: () {
@@ -113,13 +90,13 @@ class RssCardStateWidget extends State<RssCard> {
                                 height: circleRadius / 2,
                               ),
                               Text(
-                                title,
+                                widget.title,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12.0),
                               ),
                               Text(
-                                subTitle,
+                                widget.subTitle,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 8.0,
@@ -151,7 +128,7 @@ class RssCardStateWidget extends State<RssCard> {
                                           ),
                                         ),
                                         Text(
-                                          all.toString(),
+                                          widget.all.toString(),
                                           style: TextStyle(
                                               fontSize: 14.0,
                                               color: Theme.of(context)
@@ -174,7 +151,7 @@ class RssCardStateWidget extends State<RssCard> {
                                           ),
                                         ),
                                         Text(
-                                          read.toString(),
+                                          widget.read.toString(),
                                           style: TextStyle(
                                             fontSize: 14.0,
                                             color: Theme.of(context)
@@ -198,7 +175,7 @@ class RssCardStateWidget extends State<RssCard> {
                                           ),
                                         ),
                                         Text(
-                                          unread.toString(),
+                                          widget.unread.toString(),
                                           style: TextStyle(
                                             fontSize: 14.0,
                                             color: Theme.of(context)
@@ -236,7 +213,7 @@ class RssCardStateWidget extends State<RssCard> {
                       padding: EdgeInsets.all(4.0),
                       child: Center(
                         child: Container(
-                          child: avatar,
+                          child: widget.avatar,
 
                           /// replace your image with the Icon
                         ),
@@ -269,7 +246,7 @@ class RssCardStateWidget extends State<RssCard> {
                 leading: Icon(Icons.delete),
                 title: new Text("Unsubscribe"),
                 onTap: () async {
-                  _unsubcribeDialog(rssId);
+                  _unsubcribeDialog(widget.rssId);
                   Navigator.pop(context);
                 },
               ),
@@ -322,16 +299,14 @@ class RssCardStateWidget extends State<RssCard> {
     Navigator.of(context).pop();
     await Navigator.of(context).push(new MaterialPageRoute(
         builder: (BuildContext context) {
-          print(
-              "title: $title,catalog: $subTitle,catalogId:$catalogId,rssId:$rssId");
           return new RssEditDialog(
-              avatar: avatar,
-              title: title,
-              catalog: subTitle,
-              catalogId: catalogId,
-              rssId: rssId,
-              url: url,
-              voidCallback: voidCallback);
+              avatar: widget.avatar,
+              title: widget.title,
+              catalog: widget.subTitle,
+              catalogId: widget.catalogId,
+              rssId: widget.rssId,
+              url: widget.url,
+              voidCallback: widget.voidCallback);
         },
         fullscreenDialog: true));
   }

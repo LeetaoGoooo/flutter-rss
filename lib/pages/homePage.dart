@@ -13,6 +13,7 @@ class HomePage extends StatefulWidget {
 
 class HomeStatePage extends State<HomePage> with TickerProviderStateMixin {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   int _selectedPageIndex = 0;
   PageController pageController = PageController(
     initialPage: 0,

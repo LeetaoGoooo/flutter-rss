@@ -75,13 +75,23 @@ class RssEditDialogState extends State<RssEditDialog> {
       key: _scaffoldKey,
       appBar: new AppBar(
         title: Text(title),
+        leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: Theme.of(context).appBarTheme.actionsIconTheme.color,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            }),
         actions: [
           IconButton(
               icon: Icon(
                 Icons.done,
-                color: Colors.white,
+                color: Theme.of(context).appBarTheme.actionsIconTheme.color,
               ),
-              onPressed: null),
+              onPressed: () async {
+                await _save();
+              }),
         ],
       ),
       body: Container(
@@ -262,5 +272,6 @@ class RssEditDialogState extends State<RssEditDialog> {
           .showSnackBar(SnackBar(content: Text("Update Failed")));
     });
     widget.voidCallback();
+    Navigator.pop(context);
   }
 }

@@ -55,7 +55,10 @@ class TabViewWidgetState extends State<TabViewWidget> {
     });
 
     eventBus.event.on<TabViewFeedEvent>().listen((events) {
-      print("当前接受 catalog:${events.catalog.catalog} 当前 catalog: ${catalog.catalog}");
+      print("当前接受 catalog:${events.catalog?.catalog} 当前 catalog: ${catalog?.catalog}");
+      if(events.catalog == null){
+        return;
+      }
       if (events.catalog.id != catalog.id && catalog.id != -1) {
         return;
       }

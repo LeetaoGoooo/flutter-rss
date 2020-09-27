@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_progress_button/flutter_progress_button.dart';
+import 'package:provider/provider.dart';
 import 'package:rss/compents/tabviewWidget.dart';
 import 'package:rss/models/dao/catalog_dao.dart';
 import 'package:rss/models/dao/rss_dao.dart';
@@ -11,10 +12,12 @@ import 'package:rss/models/entity/catalog_entity.dart';
 import 'package:rss/models/entity/rss_entity.dart';
 
 import 'package:rss/pages/preSub.dart';
+import 'package:rss/provider/theme_provider.dart';
 import 'package:rss/service/feedService.dart';
 import 'package:rss/constants/globals.dart' as g;
 import 'package:rss/tools/feedParser.dart';
 import 'package:rss/tools/globalEventBus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeWidgetPage extends StatefulWidget {
   @override
@@ -40,6 +43,7 @@ class HomeWidgetStatePage extends State<HomeWidgetPage>
   IconData _star = Icons.star_border;
   IconData _all = Icons.view_list;
   final GlobalEventBus eventBus = new GlobalEventBus();
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   @override
   void initState() {
@@ -49,6 +53,7 @@ class HomeWidgetStatePage extends State<HomeWidgetPage>
     _tabViews.add(TabViewWidget(key: _key, catalog: _tabs[0]));
     _tabController = new TabController(length: _tabs.length, vsync: this);
     loadTabController();
+    _autoFitThemeMode();
   }
 
   loadTabController() {
@@ -88,7 +93,7 @@ class HomeWidgetStatePage extends State<HomeWidgetPage>
         key: _scaffoldKey,
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Align(child: Text("LATEST")),
+          title: Align(child: Text("LATEST",style: Theme.of(context).appBarTheme.textTheme.subtitle1,)),
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.add),
@@ -145,7 +150,10 @@ class HomeWidgetStatePage extends State<HomeWidgetPage>
                         _filterFeeds(2, status: 0);
                       }),
                   IconButton(
-                    icon: Icon(Icons.done,color: Theme.of(context).iconTheme.color,),
+                    icon: Icon(
+                      Icons.done,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     onPressed: () {
                       // openPage(context);
                       _showReadBottomSheet(context);
@@ -213,7 +221,7 @@ class HomeWidgetStatePage extends State<HomeWidgetPage>
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white)),
                       color: _urlValidate
-                          ? Theme.of(context).buttonTheme.colorScheme.primary
+                          ? Theme.of(context).buttonColor
                           : Theme.of(context).disabledColor,
                       width: 110,
                       onPressed: !_urlValidate
@@ -395,5 +403,31 @@ class HomeWidgetStatePage extends State<HomeWidgetPage>
             ],
           );
         });
+  }
+
+  void _autoFitThemeMode() async {
+    final SharedPreferences prefs = await _prefs;
+    ThemeMode themeMode = ThemeMode.system;
+    if (prefs.containsKey(g.THEME_MODE)) {
+      if (prefs.getString(g.THEME_MODE) == g.THEME_DARK_MODE) {
+        themeMode = ThemeMode.dark;
+      } else {
+        themeMode = ThemeMode.light;
+      }
+    }
+    print("当前themeMode:$themeMode");
+    if (themeMode == ThemeMode.system) {
+      final ThemeData theme = Theme.of(context);
+      if (theme.brightness == Brightness.dark) {
+        print("跟随系统 darkMode");
+        prefs.setString(g.THEME_MODE, g.THEME_DARK_MODE);
+        Provider.of<ThemeProvider>(context, listen: false)
+            .setTheme(ThemeMode.dark);
+      } else {
+        prefs.setString(g.THEME_MODE, g.THEME_LIGHT_MODE);
+        Provider.of<ThemeProvider>(context, listen: false)
+            .setTheme(ThemeMode.light);
+      }
+    }
   }
 }

@@ -105,7 +105,7 @@ class ArticleHeroWidgetState extends State<ArticleHeroWidget> {
         leading: IconButton(
             icon: Icon(
               Icons.arrow_back_ios,
-              // color: Colors.white,
+              color: Theme.of(context).appBarTheme.actionsIconTheme.color,
             ),
             onPressed: () {
               Navigator.pushReplacementNamed(context, "/");

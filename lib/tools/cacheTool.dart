@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 class CacheTool {
+
+
+
     /// 获取缓存
   Future<String> loadApplicationCache() async {
     /// 获取文件夹

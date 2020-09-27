@@ -5,11 +5,13 @@ import 'package:rss/comm/colors.dart';
 import 'package:rss/comm/contants.dart';
 import 'package:rss/comm/styles.dart';
 
+
 extension ThemeModeExtension on ThemeMode {
   String get value => ['System', 'Light', 'Dark'][index];
 }
 
 class ThemeProvider extends ChangeNotifier {
+
   void syncTheme() {
     final String theme = SpUtil.getString(Constant.theme);
     if (theme.isNotEmpty && theme != ThemeMode.system.value) {
@@ -22,7 +24,7 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  ThemeMode getThemeMode() {
+  ThemeMode getThemeMode(){
     final String theme = SpUtil.getString(Constant.theme);
     switch (theme) {
       case 'Dark':
@@ -36,9 +38,9 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeData getTheme({bool isDarkMode = false}) {
     return ThemeData(
-        errorColor: isDarkMode ? Colours.dark_red : Colours.red,
+        errorColor: Colors.red,
         brightness: isDarkMode ? Brightness.dark : Brightness.light,
-        primaryColor: isDarkMode ? Colours.dark_app_main : Colors.white,
+        primaryColor: Colors.yellow[700],
         accentColor: Colors.yellow[700],
         buttonColor: Colors.yellow[700],
         toggleableActiveColor: Colors.yellow[700],
@@ -50,7 +52,7 @@ class ThemeProvider extends ChangeNotifier {
         indicatorColor: isDarkMode ? Colors.grey : Colors.orange,
         // 页面背景色
         scaffoldBackgroundColor:
-            isDarkMode ? Colours.dark_bg_color : Colors.white,
+            isDarkMode ? Colors.black : Colors.white,
         // 主要用于Material背景色
         canvasColor: isDarkMode ? Colours.dark_material_bg : Colors.white,
         // 文字选择色（输入框复制粘贴菜单）
@@ -105,8 +107,10 @@ class ThemeProvider extends ChangeNotifier {
         ),
         iconTheme: IconThemeData(color: isDarkMode ? Colors.white:Colors.black),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
-            backgroundColor: Colors.yellow[700])
+            backgroundColor: Colors.yellow[700]),
+        
         // pageTransitionsTheme: NoTransitionsOnWeb(),
         );
+        
   }
 }
