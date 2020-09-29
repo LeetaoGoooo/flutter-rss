@@ -55,8 +55,9 @@ class TabViewWidgetState extends State<TabViewWidget> {
     });
 
     eventBus.event.on<TabViewFeedEvent>().listen((events) {
-      print("当前接受 catalog:${events.catalog?.catalog} 当前 catalog: ${catalog?.catalog}");
-      if(events.catalog == null){
+      print(
+          "当前接受 catalog:${events.catalog?.catalog} 当前 catalog: ${catalog?.catalog}");
+      if (events.catalog == null) {
         return;
       }
       if (events.catalog.id != catalog.id && catalog.id != -1) {
@@ -114,8 +115,8 @@ class TabViewWidgetState extends State<TabViewWidget> {
   addFeed({FeedsEntity feed, List<FeedsEntity> feeds}) {
     if (feed != null) {
       if (this.mounted && feedList.indexOf(feed) == -1 && feed != null) {
-          feedList.add(feed);
-          feedList.sort((a, b) => b.published.compareTo(a.published));
+        feedList.add(feed);
+        feedList.sort((a, b) => b.published.compareTo(a.published));
 
         setState(() {
           feedList = feedList;
@@ -182,6 +183,20 @@ class TabViewWidgetState extends State<TabViewWidget> {
         child: (feedList.length > 0 || rssList.length > 0)
             ? Stack(children: <Widget>[
                 Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                  Expanded(
+                      flex: 1,
+                      child: Align(
+                          alignment: Alignment.topLeft,
+                          child: ListView.builder(
+                              itemCount: rssList.length,
+                              physics: BouncingScrollPhysics(),
+                              scrollDirection: Axis.horizontal,
+                              shrinkWrap: true,
+                              itemBuilder: (BuildContext context, int index) {
+                                RssEntity rssEntity = rssList[index];
+                                print("rss ${rssEntity.title}");
+                                return _buildRssChip(rssEntity);
+                              }))),
                   Visibility(
                       visible: showProgressBar,
                       child: LinearProgressIndicator()),
@@ -210,7 +225,10 @@ class TabViewWidgetState extends State<TabViewWidget> {
                                     curve: Curves.ease);
                               }
                             },
-                            child: Icon(Icons.arrow_upward,color: Theme.of(context).iconTheme.color,))))
+                            child: Icon(
+                              Icons.arrow_upward,
+                              color: Theme.of(context).iconTheme.color,
+                            ))))
               ])
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -277,8 +295,43 @@ class TabViewWidgetState extends State<TabViewWidget> {
     );
   }
 
-  Widget _buildRssFeedListTile(FeedsEntity current,
-      {FeedsEntity pre, FeedsEntity next}) {}
+  Widget _buildRssChip(RssEntity rssEntity) {
+    return Padding(
+        padding: EdgeInsets.fromLTRB(16, 0, 0, 0),
+        child: RawChip(
+          avatar: (selectedRss == null || selectedRss.id != rssEntity.id)
+              ? null
+              : CircleAvatar(backgroundColor: Colors.purple[300]),
+          selected: (selectedRss == null || selectedRss.id != rssEntity.id)
+              ? false
+              : true,
+          label: Text(rssEntity.title),
+          selectedColor: Colors.purple[100],
+          selectedShadowColor: Theme.of(context).chipTheme.selectedShadowColor,
+          deleteIcon: Icon(Icons.cancel, color: Colors.grey, size: 18),
+          onDeleted: () async {
+            await _unsubcribeDialog(rssEntity);
+          },
+          onSelected: (value) {
+            print(
+                "value:$value selectedRss:${selectedRss?.title} ${rssEntity.title}");
+            if (selectedRss == rssEntity) {
+              setState(() {
+                selectedRss = null;
+              });
+            } else {
+              setState(() {
+                selectedRss = rssEntity;
+              });
+            }
+
+            print("selected:${selectedRss?.title} selected:$value");
+            setState(() {
+              getTab(rssEntity: selectedRss, selected: value);
+            });
+          },
+        ));
+  }
 
   Widget _buildRssFeedListTileItem(FeedsEntity feed) {
     FeedsEntity _feedsEntity = feed;

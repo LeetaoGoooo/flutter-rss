@@ -37,7 +37,7 @@ class TabService {
       await feedService.getFavoritesByCatalogId(catalogId);
     }
     if (rssId != null) {
-       await feedService.getFavoritesByRssId(rssId);
+       await feedService.getFavoritesByRssId(rssId,catalog:catalog);
     }
   }
 

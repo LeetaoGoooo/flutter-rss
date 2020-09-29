@@ -331,11 +331,12 @@ class FeedService {
   }
 
   /// 根据 rssid 获取对应的喜欢列表
-  Future<void> getFavoritesByRssId(int rssId) async {
+  Future<void> getFavoritesByRssId(int rssId, {CatalogEntity catalog}) async {
     List<FeedsEntity> feedsList = await feedsDao.findFeedsByRssId(rssId);
     List<MultiRssEntity> multiRssList = await rssDao.findMultiRssByRssId(rssId);
-    CatalogEntity catalog =
-        await catalogDao.findCatalogById(multiRssList[0].catalogId);
+    if (catalog == null) {
+      catalog = await catalogDao.findCatalogById(multiRssList[0].catalogId);
+    }
     eventBus.event.fire(
         TabViewFeedEvent(catalog, feeds: feedsList, action: g.ACTION_LIKE));
   }
